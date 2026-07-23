@@ -1,0 +1,57 @@
+{
+  "id": "strat_12345xyz",
+  "name": "Mean Reversion Alpha",
+  "version": 1,
+  "instrument": "equity",
+  "timeframe": "15m",
+  "backtestable": true,
+  "bias": [],
+  "entry": {
+    "combine": "all",
+    "direction": "long",
+    "time": {
+          "start": "09:30",
+          "end": "16:00"
+      },
+
+    "conditions": [
+
+    ]
+  },
+  "setup": [
+      {
+          "source": "indicator",
+          "fn": "zscore",
+          "args": {
+            "timeperiod": 20, "nbdev": 1
+          },
+          "weight": 1,
+          "negate": false,
+          "op": ">=",
+          "value": 0.1
+      }
+  ],
+  "stop": {
+    "rule": "beyond_level_or_wall",
+    "buffer_ticks": 4,
+    "is_dynamic_value": true,
+    "dynamic_fn": {
+      "source": "indicator",
+      "fn": "HMA",
+      "args": { "period": 20 }
+    }
+  },
+  "target": {
+    "rule": "rr_multiple",
+    "rr_multiple": 2,
+    "then": {
+      "rule": "fixed_percent",
+      "target_percent": 5
+    }
+  },
+  "risk": {
+    "min_rr": 2.0,
+    "sizing": "fixed_fractional"
+  }
+}
+
