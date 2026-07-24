@@ -11,12 +11,13 @@ def validate_json(json_data):
 
     setup_indicators, condition_for_setup_indicators, extra_indicators = (
         obtain_conditions_for_setup_indicators(
-            json_data.get("entry", {}).get("conditions", []), extra_indicators=[]
+            json_data.get("setup", {}), extra_indicators=[]
         )
     )
     entry_indicators, condition_for_entry_indicators, extra_indicators = (
         obtain_conditions_for_setup_indicators(
-            json_data["entry"]["conditions"], extra_indicators=extra_indicators
+            json_data.get("entry", {}).get("conditions", []),
+            extra_indicators=extra_indicators,
         )
     )
     if setup_indicators is None or condition_for_setup_indicators is None:
