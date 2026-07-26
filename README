@@ -1,4 +1,4 @@
-# Confluence-JSON-Tester
+# Confluence_JSON_Tester
 
 ## Installation
 All dependencies are managed via [uv](https://docs.astral.sh/uv/).
