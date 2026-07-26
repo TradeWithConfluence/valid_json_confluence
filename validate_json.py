@@ -1,6 +1,6 @@
 import json
-from .classes import CandleSize
-from .functions import obtain_conditions_for_setup_indicators
+from classes import CandleSize
+from functions import obtain_conditions_for_setup_indicators
 
 
 def validate_json(json_data):
@@ -33,7 +33,7 @@ def validate_json(json_data):
 
 
 if __name__ == "__main__":
-    json_data = json.load(open("json/exampleJSONFile.json"))
+    json_data = json.load(open("ref-1-bullflag-tech.json"))
     response = validate_json(json_data)
 
     if response == 200:

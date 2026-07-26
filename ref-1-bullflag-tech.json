@@ -1,0 +1,180 @@
+{
+  "id": "",
+  "name": "Bull Flag Breakout — Tech Momentum",
+  "version": 1,
+  "timeframe": "1d",
+  "backtestable": true,
+  "benchmark": "SPY",
+  "instrument": "equity",
+  "bias": [],
+  "entry": {
+    "combine": "all",
+    "weighted": false,
+    "direction": "long",
+    "conditions": [
+      {
+        "source": "indicator",
+        "fn": "patternbreakout",
+        "args": {},
+        "weight": 1,
+        "op": "==",
+        "value": 100,
+        "negate": false,
+        "stage": "trigger"
+      },
+      {
+        "source": "indicator",
+        "fn": "breaklevel",
+        "args": {},
+        "weight": 1,
+        "op": "==",
+        "value": 100,
+        "negate": false,
+        "stage": "trigger"
+      }
+    ],
+    "order": {
+      "type": "market"
+    },
+    "setup_expiry_bars": 10,
+    "re_entry_allow": false,
+    "signal_throttle_max_per_day": 1,
+    "signal_throttle_scope": "symbol",
+    "confirmation_timeframe": "1m"
+  },
+  "stop": {
+    "rule": "beyond_structure_swing",
+    "buffer_ticks": 0,
+    "structure_ref": "prior_daily_low"
+  },
+  "target": {
+    "rule": "rr_multiple",
+    "rr_multiple": 5,
+    "then": {
+      "rule": "trail"
+    },
+    "t1_fraction": 0.2,
+    "runner_disposition": "ride_alert_only"
+  },
+  "risk": {
+    "sizing": "fixed_fractional",
+    "risk_percent": 1,
+    "max_concurrent_positions": 5,
+    "one_position_per_symbol": true
+  },
+  "rank_metric": "rvol",
+  "setup": [
+    {
+      "source": "indicator",
+      "fn": "adr",
+      "args": {
+        "timeframe": "1d", "timeperiod": 20
+      },
+      "weight": 1,
+      "negate": false,
+      "op": ">=",
+      "value": 5,
+      "stage": "universe"
+    },
+    {
+      "source": "indicator",
+      "fn": "roc",
+      "args": {
+        "timeperiod": 126
+      },
+      "weight": 1,
+      "negate": false,
+      "op": ">=",
+      "value": 30,
+      "stage": "universe"
+    },
+    {
+      "source": "daily",
+      "fn": "sector",
+      "args": {
+        "sector": "Technology"
+      },
+      "weight": 1,
+      "negate": false,
+      "stage": "universe"
+    },
+    {
+        "source": "indicator",
+        "fn": "close",
+        "args": {},
+        "op": ">=",
+        "is_dynamic_value": true,
+        "dynamic_fn": {
+          "source": "indicator",
+          "fn": "MA",
+          "args": {"period": 20, "matype": 1}
+        },
+        "negate": false,
+        "stage": "universe",
+        "weight": 1
+    },
+    {
+      "source": "indicator",
+      "fn": "price",
+      "args": {},
+      "weight": 1,
+      "negate": false,
+      "op": "between",
+      "value": 5,
+      "value2": 500,
+      "stage": "universe"
+    },
+    {
+      "source": "indicator",
+      "fn": "avgdollarvol",
+      "args": {
+        "timeperiod": 20
+      },
+      "weight": 1,
+      "negate": false,
+      "op": ">=",
+      "value": 20,
+      "stage": "universe"
+    },
+    {
+      "source": "indicator",
+      "fn": "bullbearflag",
+      "args": {
+        "pole_pct": 15,
+        "flag_depth_pct": 50,
+        "max_flag_days": 15,
+        "lookback_pole": 20,
+        "vol_contraction_ratio": 0.75
+      },
+      "weight": 1,
+      "negate": false,
+      "op": "==",
+      "value": 100,
+      "stage": "setup"
+    },
+    {
+      "source": "indicator",
+      "fn": "higherhighs",
+      "args": {
+        "pivots": 3
+      },
+      "weight": 1,
+      "negate": false,
+      "op": "==",
+      "value": -100,
+      "stage": "setup"
+    },
+    {
+      "source": "indicator",
+      "fn": "volumeslope",
+      "args": {
+        "bars": 5
+      },
+      "weight": 1,
+      "negate": false,
+      "op": "<",
+      "value": 0,
+      "stage": "setup"
+    }
+  ]
+}
