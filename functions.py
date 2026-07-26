@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import numpy as np
 
 
 def obtain_conditions_for_setup_indicators(
-    json_data_conditions, extra_indicators: list[str] = []
+    json_data_conditions, extra_indicators: list[str] | None = None
 ):
+    if extra_indicators is None:
+        extra_indicators = []
     if json_data_conditions is None:
         return [], {}, []
     setup_indicators = []
@@ -18,14 +22,14 @@ def obtain_conditions_for_setup_indicators(
             if (
                 setup_indicator.get("is_dynamic_value") is not None
                 and setup_indicator["is_dynamic_value"]
+                and setup_indicator["dynamic_fn"]["source"] == "indicator"
             ):
-                if setup_indicator["dynamic_fn"]["source"] == "indicator":
-                    indicator_string_DYNAMIC: str = setup_indicator["dynamic_fn"]["fn"]
-                    for period in setup_indicator["dynamic_fn"]["args"].values():
-                        indicator_string_DYNAMIC += f"_{period}"
-                    indicator_string_DYNAMIC = indicator_string_DYNAMIC.lower()
-                    setup_indicator["value"] = indicator_string_DYNAMIC
-                    extra_indicators.append(indicator_string_DYNAMIC)
+                indicator_string_DYNAMIC: str = setup_indicator["dynamic_fn"]["fn"]
+                for period in setup_indicator["dynamic_fn"]["args"].values():
+                    indicator_string_DYNAMIC += f"_{period}"
+                indicator_string_DYNAMIC = indicator_string_DYNAMIC.lower()
+                setup_indicator["value"] = indicator_string_DYNAMIC
+                extra_indicators.append(indicator_string_DYNAMIC)
             if condition_for_setup_indicators.get(indicator_string) is None:
                 arr = [
                     np.nan,

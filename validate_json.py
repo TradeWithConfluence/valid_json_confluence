@@ -1,13 +1,13 @@
 import json
+
 from .classes import CandleSize
 from .functions import obtain_conditions_for_setup_indicators
 
 
 def validate_json(json_data):
     # ensure if equity >= 15min  timeframe
-    if type(json_data["instrument"]) is str and json_data["instrument"] == "equity":
-        if CandleSize(json_data["timeframe"]) < CandleSize.MINUTE_15:
-            return 201
+    if type(json_data["instrument"]) is str and json_data["instrument"] == "equity" and CandleSize(json_data["timeframe"]) < CandleSize.MINUTE_15:
+        return 201
 
     setup_indicators, condition_for_setup_indicators, extra_indicators = (
         obtain_conditions_for_setup_indicators(
@@ -33,7 +33,8 @@ def validate_json(json_data):
 
 
 if __name__ == "__main__":
-    json_data = json.load(open("ref-1-bullflag-tech.json"))
+    with open("ref-1-bullflag-tech.json", "r") as f:
+        json_data = json.load(f)
     response = validate_json(json_data)
 
     if response == 200:
