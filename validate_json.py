@@ -1,6 +1,6 @@
 import json
-from classes import CandleSize
-from functions import obtain_conditions_for_setup_indicators
+from .classes import CandleSize
+from .functions import obtain_conditions_for_setup_indicators
 
 
 def validate_json(json_data):
