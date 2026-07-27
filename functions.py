@@ -42,6 +42,7 @@ def obtain_conditions_for_setup_indicators(
                     np.nan,
                     np.nan,
                     np.nan,
+                    np.nan,
                 ]
                 # arr = ['<     ', '<=  ', '>     ', '>=  ', '==  ',  '!=  ',  'crosses_above', 'crosses_below', "ticks", "percent"]
                 # - **Trends**: `increasing`, `decreasing`, `new_high`, `new_low` (the `value` field represents the N-bars lookback period)
@@ -109,12 +110,10 @@ def obtain_conditions_for_setup_indicators(
                     arr[2] = arr[0]
                     arr[0] = temp_arr_val
             elif setup_indicator["op"] == "within_ticks":
-                if not np.isnan(arr[8]):
-                    return None, None, None
-                arr[8] = setup_indicator["value"]
+                arr[10] = setup_indicator["value2"] # tick amount
+                arr[8] = setup_indicator["value"] # indicator/static
             elif setup_indicator["op"] == "within_pct":
-                if not np.isnan(arr[9]):
-                    return None, None, None
-                arr[9] = setup_indicator["value"]
+                arr[10] = setup_indicator["value2"] # % amount
+                arr[9] = setup_indicator["value"] # indicator/static
             condition_for_setup_indicators[indicator_string] = arr
     return setup_indicators, condition_for_setup_indicators, extra_indicators
