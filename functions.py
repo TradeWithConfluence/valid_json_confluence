@@ -110,10 +110,10 @@ def obtain_conditions_for_setup_indicators(
                     arr[2] = arr[0]
                     arr[0] = temp_arr_val
             elif setup_indicator["op"] == "within_ticks":
-                arr[10] = setup_indicator["value2"] # tick amount
-                arr[8] = setup_indicator["value"] # indicator/static
+                arr[10] = setup_indicator["value2"]  # tick amount
+                arr[8] = setup_indicator["value"]  # indicator/static
             elif setup_indicator["op"] == "within_pct":
-                arr[10] = setup_indicator["value2"] # % amount
-                arr[9] = setup_indicator["value"] # indicator/static
+                arr[10] = setup_indicator["value2"]  # % amount
+                arr[9] = setup_indicator["value"]  # indicator/static
             condition_for_setup_indicators[indicator_string] = arr
     return setup_indicators, condition_for_setup_indicators, extra_indicators
