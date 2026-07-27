@@ -6,7 +6,11 @@ from .functions import obtain_conditions_for_setup_indicators
 
 def validate_json(json_data):
     # ensure if equity >= 15min  timeframe
-    if type(json_data["instrument"]) is str and json_data["instrument"] == "equity" and CandleSize(json_data["timeframe"]) < CandleSize.MINUTE_15:
+    if (
+        type(json_data["instrument"]) is str
+        and json_data["instrument"] == "equity"
+        and CandleSize(json_data["timeframe"]) < CandleSize.MINUTE_15
+    ):
         return 201
 
     setup_indicators, condition_for_setup_indicators, extra_indicators = (
