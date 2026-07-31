@@ -1,5 +1,7 @@
 import json
 
+import numpy as np
+
 from .classes import CandleSize
 from .functions import obtain_conditions_for_setup_indicators
 
@@ -32,6 +34,76 @@ def validate_json(json_data):
         CandleSize(json_data["timeframe"])
     except ValueError:
         return 202
+
+    risk_params_4_3 = json_data.get("target", {})
+    risk_params_4_4 = risk_params_4_3.get("then", {})
+    rr_trigger_move_stop_breakeven = risk_params_4_4.get(
+        "move_stop_breakeven", np.nan
+    )  # rr_trigger
+    lock_profit_ratchet = risk_params_4_4.get(
+        "lock_profit_ratchet", [np.nan, np.nan]
+    )  # [rr_target, rr_stop]
+    rr_target_lock_profit_ratchet = lock_profit_ratchet[0]
+    rr_stop_lock_profit_ratchet = lock_profit_ratchet[1]
+    ma_trail = risk_params_4_4.get(
+        "ma_trail", [np.nan, np.nan, np.nan]
+    )  # [ma_period, ma_type, ma_multiplier]
+    ma_params = ma_trail[0:2]
+    if not np.isnan(ma_trail[0]):
+        extra_indicators.append(f"ma_{int(ma_params[0])}_{int(ma_params[1])}")
+    atr_trail = risk_params_4_4.get("atr_trail", [np.nan, np.nan])
+    atr_params = atr_trail[0:1]
+    if not np.isnan(atr_trail[0]):
+        extra_indicators.append(f"atr_{int(atr_params[0])}")
+    sar_trail = risk_params_4_4.get("parabolicsar_trail", [np.nan, np.nan, np.nan])
+    sar_params = sar_trail[0:2]
+    if not np.isnan(sar_trail[0]):
+        extra_indicators.append(
+            f"parabolicsar_{int(sar_params[0])}_{int(sar_params[1])}"
+        )
+    supertrend_trail = risk_params_4_4.get("supertrend_trail", [np.nan, np.nan, np.nan])
+    supertrend_params = supertrend_trail[0:2]
+    if not np.isnan(supertrend_trail[0]):
+        extra_indicators.append(
+            f"supertrendline_{int(supertrend_params[0])}_{int(supertrend_params[1])}"
+        )
+    dollar_trail = risk_params_4_4.get("dollar_trail", np.nan)
+    percent_trail = risk_params_4_4.get("percent_trail", np.nan)
+    bar_trail = 1.0 if risk_params_4_4.get("barbybar_trail", False) else 0.0
+    never_widen_invariant = (
+        1.0 if risk_params_4_4.get("never_widen_invariant", True) else 0.0
+    )
+    if never_widen_invariant == 0.0:
+        return 205  # Invalid never_widen_invariant value
+    structure_trail = risk_params_4_4.get("structure_trail", np.nan)
+    if not np.isnan(structure_trail):
+        extra_indicators.append(f"structuresllong_{int(structure_trail)}")
+        extra_indicators.append(f"structureslshort_{int(structure_trail)}")
+
+    ma_multiple = ma_trail[2]
+    atr_multiple = atr_trail[1]
+    sar_multiple = sar_trail[2]
+    supertrend_multiple = supertrend_trail[2]
+    if (
+        ma_multiple < 0.0
+        or atr_multiple < 0.0
+        or sar_multiple < 0.0
+        or supertrend_multiple < 0.0
+    ):
+        return 206  # Invalid multiple value
+    if rr_trigger_move_stop_breakeven < 0.0:
+        return 207  # Invalid rr_trigger_move_stop_breakeven value
+    if rr_stop_lock_profit_ratchet < 0.0 or rr_target_lock_profit_ratchet < 0.0:
+        return 208  # Invalid rr_lock_profit_ratchet value
+    if rr_stop_lock_profit_ratchet >= rr_target_lock_profit_ratchet:
+        return 209  # Invalid rr_lock_profit_ratchet value
+    if (
+        dollar_trail < 0.0
+        or percent_trail < 0.0
+        or bar_trail < 0.0
+        or structure_trail < 2.0
+    ):
+        return 210  # Invalid trail value
 
     return 200
 
