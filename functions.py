@@ -4,7 +4,9 @@ import numpy as np
 
 
 def obtain_conditions_for_setup_indicators(
-    json_data_conditions, extra_indicators: list[str] | None = None
+    json_data_conditions,
+    extra_indicators: list[str] | None = None,
+    stage_name: str = "setup",
 ):
     if extra_indicators is None:
         extra_indicators = []
@@ -13,7 +15,10 @@ def obtain_conditions_for_setup_indicators(
     setup_indicators = []
     condition_for_setup_indicators = {}
     for setup_indicator in json_data_conditions:
-        if setup_indicator["source"] == "indicator":
+        if (
+            setup_indicator["source"] == "indicator"
+            and setup_indicator["stage"] == stage_name
+        ):
             indicator_string = setup_indicator["fn"]
             for period in setup_indicator["args"].values():
                 indicator_string += f"_{period}"

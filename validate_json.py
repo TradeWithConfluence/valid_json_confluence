@@ -17,19 +17,31 @@ def validate_json(json_data):
 
     setup_indicators, condition_for_setup_indicators, extra_indicators = (
         obtain_conditions_for_setup_indicators(
-            json_data.get("setup", {}), extra_indicators=[]
+            json_data.get("setup", {}), extra_indicators=[], stage_name="setup"
         )
     )
     entry_indicators, condition_for_entry_indicators, extra_indicators = (
         obtain_conditions_for_setup_indicators(
             json_data.get("entry", {}).get("conditions", []),
             extra_indicators=extra_indicators,
+            stage_name="trigger",
         )
+    )
+    (
+        universe_indicators,
+        condition_for_universe_indicators,
+        _,
+    ) = obtain_conditions_for_setup_indicators(
+        json_data.get("entry", {}).get("conditions", []),
+        extra_indicators=[],
+        stage_name="universe",
     )
     if setup_indicators is None or condition_for_setup_indicators is None:
         return 203  # Invalid setup indicators
     if entry_indicators is None or condition_for_entry_indicators is None:
         return 204  # Invalid entry indicators
+    if universe_indicators is None or condition_for_universe_indicators is None:
+        return 205  # Invalid universe indicators
     try:
         CandleSize(json_data["timeframe"])
     except ValueError:
