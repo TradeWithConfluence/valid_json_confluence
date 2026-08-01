@@ -3,10 +3,10 @@ import json
 import numpy as np
 
 from .classes import CandleSize
-from .functions import obtain_conditions_for_setup_indicators
+from .functions import get_indicator_conditions_from_jsons
 
 
-def validate_json(json_data):
+def validate_json_file(json_data):
     # ensure if equity >= 15min  timeframe
     if (
         type(json_data["instrument"]) is str
@@ -15,27 +15,17 @@ def validate_json(json_data):
     ):
         return 201
 
-    setup_indicators, condition_for_setup_indicators, extra_indicators = (
-        obtain_conditions_for_setup_indicators(
-            json_data.get("setup", {}), extra_indicators=[], stage_name="setup"
-        )
-    )
-    entry_indicators, condition_for_entry_indicators, extra_indicators = (
-        obtain_conditions_for_setup_indicators(
-            json_data.get("entry", {}).get("conditions", []),
-            extra_indicators=extra_indicators,
-            stage_name="trigger",
-        )
-    )
     (
+        setup_indicators,
+        condition_for_setup_indicators,
+        entry_indicators,
+        condition_for_entry_indicators,
         universe_indicators,
         condition_for_universe_indicators,
+        extra_indicators,
         _,
-    ) = obtain_conditions_for_setup_indicators(
-        json_data.get("entry", {}).get("conditions", []),
-        extra_indicators=[],
-        stage_name="universe",
-    )
+    ) = get_indicator_conditions_from_jsons(json_data)
+
     if setup_indicators is None or condition_for_setup_indicators is None:
         return 203  # Invalid setup indicators
     if entry_indicators is None or condition_for_entry_indicators is None:
@@ -123,7 +113,7 @@ def validate_json(json_data):
 if __name__ == "__main__":
     with open("ref-1-bullflag-tech.json", "r") as f:
         json_data = json.load(f)
-    response = validate_json(json_data)
+    response = validate_json_file(json_data)
 
     if response == 200:
         print("Valid JSON file")

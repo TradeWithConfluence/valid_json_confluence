@@ -1,11 +1,11 @@
 {
   "id": "",
-  "name": "Bull Flag Breakout — Tech Momentum",
+  "name": "Bull Flag Breakout \u2014 Tech Momentum",
   "version": 1,
+  "instrument": "equity",
   "timeframe": "1d",
   "backtestable": true,
   "benchmark": "SPY",
-  "instrument": "equity",
   "bias": [],
   "entry": {
     "combine": "all",
@@ -17,9 +17,9 @@
         "fn": "patternbreakout",
         "args": {},
         "weight": 1,
+        "negate": false,
         "op": "==",
         "value": 100,
-        "negate": false,
         "stage": "trigger"
       },
       {
@@ -27,9 +27,9 @@
         "fn": "breaklevel",
         "args": {},
         "weight": 1,
+        "negate": false,
         "op": "==",
         "value": 100,
-        "negate": false,
         "stage": "trigger"
       }
     ],
@@ -58,7 +58,7 @@
   },
   "risk": {
     "sizing": "fixed_fractional",
-    "risk_percent": 1,
+    "quantity": 1,
     "max_concurrent_positions": 5,
     "one_position_per_symbol": true
   },
@@ -68,7 +68,8 @@
       "source": "indicator",
       "fn": "adr",
       "args": {
-        "timeframe": "1d", "timeperiod": 20
+        "timeframe": "1d",
+        "timeperiod": 20
       },
       "weight": 1,
       "negate": false,
@@ -99,19 +100,22 @@
       "stage": "universe"
     },
     {
+      "source": "indicator",
+      "fn": "close",
+      "args": {},
+      "weight": 1,
+      "negate": false,
+      "op": ">",
+      "is_dynamic_value": true,
+      "dynamic_fn": {
         "source": "indicator",
-        "fn": "close",
-        "args": {},
-        "op": ">=",
-        "is_dynamic_value": true,
-        "dynamic_fn": {
-          "source": "indicator",
-          "fn": "MA",
-          "args": {"period": 20, "matype": 1}
-        },
-        "negate": false,
-        "stage": "universe",
-        "weight": 1
+        "fn": "MA",
+        "args": {
+          "period": 200,
+          "matype": 0
+        }
+      },
+      "stage": "universe"
     },
     {
       "source": "indicator",
@@ -154,14 +158,14 @@
     },
     {
       "source": "indicator",
-      "fn": "higherhighs",
+      "fn": "lowerlows",
       "args": {
         "pivots": 3
       },
       "weight": 1,
       "negate": false,
       "op": "==",
-      "value": -100,
+      "value": 100,
       "stage": "setup"
     },
     {

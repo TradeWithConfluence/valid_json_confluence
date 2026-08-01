@@ -122,3 +122,327 @@ def obtain_conditions_for_setup_indicators(
                 arr[9] = setup_indicator["value"]  # indicator/static
             condition_for_setup_indicators[indicator_string] = arr
     return setup_indicators, condition_for_setup_indicators, extra_indicators
+
+
+def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
+    risk_params_4_1 = json_data.get("stop", {})
+    adr_stop = risk_params_4_1.get("adrstop", [np.nan, np.nan, np.nan])
+    atr_stop = risk_params_4_1.get("atrstop", [np.nan, np.nan])
+    if not np.isnan(adr_stop[0]):
+        extra_indicators.append(f"adr_{adr_stop[0]}_{adr_stop[1]}")
+    if not np.isnan(atr_stop[0]):
+        extra_indicators.append(f"atr_{int(atr_stop[0])}")
+
+    fixed_percent_stop = risk_params_4_1.get("fixed_percent_stop", np.nan)
+    fixed_dollar_stop = risk_params_4_1.get("fixed_dollar_stop", np.nan)
+    volatility_sanity_cap_adr = risk_params_4_1.get(
+        "volatility_sanity_cap_adr", [np.nan, np.nan, np.nan]
+    )
+    volatility_sanity_cap_atr = risk_params_4_1.get(
+        "volatility_sanity_cap_atr", [np.nan, np.nan]
+    )
+    if not np.isnan(volatility_sanity_cap_adr[0]):
+        extra_indicators.append(
+            f"adr_{volatility_sanity_cap_adr[0]}_{int(volatility_sanity_cap_adr[1])}"
+        )
+    if not np.isnan(volatility_sanity_cap_atr[0]):
+        extra_indicators.append(f"atr_{int(volatility_sanity_cap_atr[0])}")
+
+    zonestopob = risk_params_4_1.get("zonestopob", False)
+    zonestopfvg = risk_params_4_1.get("zonestopfvg", False)
+    zonestopifvg = risk_params_4_1.get("zonestopifvg", False)
+    zonestopsweep = risk_params_4_1.get("zonestopsweep", False)
+
+    risk_4_1_params_numpy = (
+        np.array(  # TODO: didn't add SL for a few of the features like FVG, etc..
+            [
+                adr_stop[0],
+                adr_stop[1],
+                adr_stop[2],
+                atr_stop[0],
+                atr_stop[1],
+                fixed_percent_stop,
+                fixed_dollar_stop,
+                volatility_sanity_cap_adr[0],
+                volatility_sanity_cap_adr[1],
+                volatility_sanity_cap_adr[2],
+                volatility_sanity_cap_atr[0],
+                volatility_sanity_cap_atr[1],
+                zonestopob,
+                zonestopfvg,
+                zonestopifvg,
+                zonestopsweep,
+            ]
+        )
+    )
+
+    risk_params_4_2 = json_data.get("risk", {})
+    sizing = risk_params_4_2.get("sizing", "")
+    percentage_risk = dollar_risk = fixed_quantity = np.nan
+    if sizing == "fixed_fractional":
+        percentage_risk = risk_params_4_2.get("quantity", np.nan)
+    elif sizing == "fixed_dollar":
+        dollar_risk = risk_params_4_2.get("quantity", np.nan)
+    elif sizing == "fixed_quantity":
+        fixed_quantity = risk_params_4_2.get("quantity", np.nan)
+    max_risk_per_trade = risk_params_4_2.get("max_risk_per_trade", np.nan)
+
+    # TODO V1.x
+    # atr_multiplier = np.nan
+    # volatility_normalized = risk_params_4_2.get("volatility_normalized", [False, 0, 0])
+    # atr_param = volatility_normalized[1]
+    # atr_multiplier = volatility_normalized[2]
+    # if atr_param > 0 and f"atr_{atr_param}" not in (
+    #     setup_indicators + entry_indicators + extra_indicators
+    # ):
+    #     extra_indicators.append(f"atr_{atr_param}")
+
+    contract_rounding_rule = risk_params_4_2.get("contract_rounding_rule", False)
+    if contract_rounding_rule:
+        contract_rounding_rule = 1
+    else:
+        contract_rounding_rule = 0
+
+    risk_4_2_params_numpy = np.array(
+        [
+            percentage_risk,
+            dollar_risk,
+            fixed_quantity,
+            max_risk_per_trade,
+            # atr_multiplier,
+            contract_rounding_rule,
+        ]
+    )
+
+    fixed_dollar_target = np.nan
+    risk_params_4_3 = json_data.get("target", {})
+    r_multiple_targets = risk_params_4_3.get(
+        "rr_multiple_targets", [[np.nan, np.nan] for _ in range(5)]
+    )  # (int # of targets, [risk_multiple, % of position to exit], [risk_multiple, % of position to exit], ...)
+    fixed_percent_target = risk_params_4_3.get("fixed_percent_target", np.nan)
+    if np.isnan(fixed_percent_target):
+        fixed_dollar_target = risk_params_4_3.get("fixed_dollar_target", np.nan)
+    level_target = risk_params_4_3.get("level_target", np.nan)
+    time_based_takes = risk_params_4_3.get(
+        "time_based_takes", [[np.nan, np.nan] for _ in range(5)]
+    )  #  (int # of timebasedtargets, [# of candles of time (int), % of position to exit], [# of candles of time, % of position to exit], ...)
+    # trailing_only_mode = risk_params_4_3.get("trailing_only_mode", False)
+    risk_params_4_4 = {}
+    risk_params_4_4 = risk_params_4_3.get("then", {})
+    if len(r_multiple_targets) < 5:
+        r_multiple_targets.extend(
+            [[np.nan, np.nan] for _ in range(5 - len(r_multiple_targets))]
+        )
+    if len(time_based_takes) < 5:
+        time_based_takes.extend(
+            [[np.nan, np.nan] for _ in range(5 - len(time_based_takes))]
+        )
+
+    risk_4_3_params_lists_numpy = np.array(
+        [
+            np.asarray(r_multiple_targets, dtype=np.float64),
+            np.asarray(time_based_takes, dtype=np.float64),
+        ],
+        dtype=np.float64,
+    )
+    risk_4_3_params_numpy = np.array(
+        [
+            fixed_percent_target,
+            fixed_dollar_target,
+            level_target,
+        ]
+    )
+
+    rr_trigger_move_stop_breakeven = risk_params_4_4.get(
+        "move_stop_breakeven", np.nan
+    )  # rr_trigger
+    lock_profit_ratchet = risk_params_4_4.get(
+        "lock_profit_ratchet", [np.nan, np.nan]
+    )  # [rr_target, rr_stop]
+    rr_target_lock_profit_ratchet = lock_profit_ratchet[0]
+    rr_stop_lock_profit_ratchet = lock_profit_ratchet[1]
+    ma_trail = risk_params_4_4.get(
+        "ma_trail", [np.nan, np.nan, np.nan]
+    )  # [ma_period, ma_type, ma_multiplier]
+    ma_params = ma_trail[0:2]
+    if not np.isnan(ma_trail[0]):
+        extra_indicators.append(f"ma_{int(ma_params[0])}_{int(ma_params[1])}")
+    atr_trail = risk_params_4_4.get("atr_trail", [np.nan, np.nan])
+    atr_params = atr_trail[0:1]
+    if not np.isnan(atr_trail[0]):
+        extra_indicators.append(f"atr_{int(atr_params[0])}")
+    sar_trail = risk_params_4_4.get("parabolicsar_trail", [np.nan, np.nan, np.nan])
+    sar_params = sar_trail[0:2]
+    if not np.isnan(sar_trail[0]):
+        extra_indicators.append(
+            f"parabolicsar_{int(sar_params[0])}_{int(sar_params[1])}"
+        )
+    supertrend_trail = risk_params_4_4.get("supertrend_trail", [np.nan, np.nan, np.nan])
+    supertrend_params = supertrend_trail[0:2]
+    if not np.isnan(supertrend_trail[0]):
+        extra_indicators.append(
+            f"supertrendline_{int(supertrend_params[0])}_{int(supertrend_params[1])}"
+        )
+    dollar_trail = risk_params_4_4.get("dollar_trail", np.nan)
+    percent_trail = risk_params_4_4.get("percent_trail", np.nan)
+    bar_trail = 1.0 if risk_params_4_4.get("barbybar_trail", False) else 0.0
+    never_widen_invariant = (
+        1.0 if risk_params_4_4.get("never_widen_invariant", True) else 0.0
+    )
+    structure_trail = risk_params_4_4.get("structure_trail", np.nan)
+    if not np.isnan(structure_trail):
+        extra_indicators.append(f"structuresllong_{int(structure_trail)}")
+        extra_indicators.append(f"structureslshort_{int(structure_trail)}")
+
+    runnerdisposition = 1.0 if risk_params_4_4.get("runnerdisposition", False) else 0.0
+    ma_multiple = ma_trail[2]
+    atr_multiple = atr_trail[1]
+    sar_multiple = sar_trail[2]
+    supertrend_multiple = supertrend_trail[2]
+
+    risk_4_4_params_numpy = np.array(
+        [
+            rr_trigger_move_stop_breakeven,
+            rr_target_lock_profit_ratchet,
+            rr_stop_lock_profit_ratchet,
+            ma_params[0],
+            ma_params[1],
+            ma_multiple,
+            atr_params[0],
+            atr_multiple,
+            sar_params[0],
+            sar_params[1],
+            sar_multiple,
+            supertrend_params[0],
+            supertrend_params[1],
+            supertrend_multiple,
+            dollar_trail,
+            percent_trail,
+            bar_trail,
+            never_widen_invariant,
+            runnerdisposition,
+            structure_trail,
+        ]
+    )
+
+    risk_params_4_5 = json_data.get("session", {})
+    close_on_session_close = (
+        1.0 if risk_params_4_5.get("close_on_session_close", False) else 0.0
+    )
+    exit_n_minutes_before_close = risk_params_4_5.get(
+        "exit_n_minutes_before_close", np.nan
+    )
+    if close_on_session_close and np.isnan(exit_n_minutes_before_close):
+        exit_n_minutes_before_close = 1
+    max_hold_n_bars = risk_params_4_5.get("max_hold_n_bars", np.nan)
+    exit_before_earnings = (
+        1.0 if risk_params_4_5.get("exit_before_earnings", False) else 0.0
+    )
+    close_before_weekend = (
+        1.0 if risk_params_4_5.get("close_before_weekend", False) else 0.0
+    )
+    exit_on_no_trade_days = (
+        1.0 if risk_params_4_5.get("exit_on_no_trade_days", False) else 0.0
+    )
+    risk_4_5_params_numpy = np.array(
+        [
+            exit_n_minutes_before_close,
+            max_hold_n_bars,
+            exit_before_earnings,
+            close_before_weekend,
+            exit_on_no_trade_days,
+        ]
+    )
+
+    risk_params_4_6 = json_data.get("risk", {})
+    max_trades_per_session = risk_params_4_6.get("max_trades_per_session", np.nan)
+    max_loss_per_session_rr = risk_params_4_6.get("max_loss_per_session_rr", np.nan)
+    max_loss_per_session_percent = risk_params_4_6.get(
+        "max_loss_per_session_percent", np.nan
+    )
+    max_loss_per_session_dollar = risk_params_4_6.get(
+        "max_loss_per_session_dollar", np.nan
+    )
+
+    max_consecutive_losses = risk_params_4_6.get(
+        "max_consecutive_losses", [np.nan, np.nan]
+    )  # [int # of losses, # candles to stop for]
+    number_of_consecutive_losses = max_consecutive_losses[0]
+    n_candles_to_stop_for = max_consecutive_losses[1]
+    max_positions_per_symbol = risk_params_4_6.get("max_positions_per_symbol", 1)
+    n_candles_wait_after_stop = risk_params_4_6.get("n_candles_wait_after_stop", 0)
+
+    first_n_candle_session_excluded = risk_params_4_6.get(
+        "first_n_candle_session_excluded", 0
+    )
+    last_n_candle_session_excluded = risk_params_4_6.get(
+        "last_n_candle_session_excluded", 0
+    )
+    n_candles_wait_after_trade_entry = risk_params_4_6.get(
+        "n_candles_wait_after_trade_entry", 0
+    )
+    n_candles_wait_after_trade_exit = risk_params_4_6.get(
+        "n_candles_wait_after_trade_exit", 0
+    )
+
+    risk_4_6_params_numpy = np.array(
+        [
+            max_trades_per_session,  # 0
+            max_loss_per_session_rr,  # 1
+            max_loss_per_session_percent,  # 2
+            max_loss_per_session_dollar,  # 3
+            number_of_consecutive_losses,  # 4
+            n_candles_to_stop_for,  # 5
+            max_positions_per_symbol,  # 6
+            n_candles_wait_after_stop,  # 7
+            first_n_candle_session_excluded,  # 8
+            last_n_candle_session_excluded,  # 9
+            n_candles_wait_after_trade_entry,  # 10
+            n_candles_wait_after_trade_exit,  # 11
+        ]
+    ).astype(np.float64)
+    return (
+        extra_indicators,
+        risk_4_1_params_numpy,
+        risk_4_2_params_numpy,
+        risk_4_3_params_numpy,
+        risk_4_3_params_lists_numpy,
+        risk_4_4_params_numpy,
+        risk_4_5_params_numpy,
+        risk_4_6_params_numpy,
+    )
+
+
+def get_indicator_conditions_from_jsons(json_data):
+    setup_indicators, condition_for_setup_indicators, extra_indicators = (
+        obtain_conditions_for_setup_indicators(
+            json_data.get("setup"), extra_indicators=[], stage_name="setup"
+        )
+    )
+
+    entry_indicators, condition_for_entry_indicators, extra_indicators = (
+        obtain_conditions_for_setup_indicators(
+            json_data.get("entry", {}).get("conditions", []),
+            extra_indicators=extra_indicators,
+            stage_name="trigger",
+        )
+    )
+    (
+        universe_indicators,
+        condition_for_universe_indicators,
+        universe_extra_indicators,
+    ) = obtain_conditions_for_setup_indicators(
+        json_data.get("setup", {}),
+        extra_indicators=[],
+        stage_name="universe",
+    )
+    return (
+        setup_indicators,
+        condition_for_setup_indicators,
+        entry_indicators,
+        condition_for_entry_indicators,
+        universe_indicators,
+        condition_for_universe_indicators,
+        extra_indicators,
+        universe_extra_indicators,
+    )
