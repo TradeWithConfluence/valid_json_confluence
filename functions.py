@@ -153,24 +153,24 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
     zonestopifvg = 1.0 if risk_params_4_1.get("zonestopifvg", 0.0) == True else 0.0
     zonestopsweep = 1.0 if risk_params_4_1.get("zonestopsweep", 0.0) == True else 0.0
 
-    risk_4_1_params_numpy =  [
-                adr_stop[0],
-                adr_stop[1],
-                adr_stop[2],
-                atr_stop[0],
-                atr_stop[1],
-                fixed_percent_stop,
-                fixed_dollar_stop,
-                volatility_sanity_cap_adr[0],
-                volatility_sanity_cap_adr[1],
-                volatility_sanity_cap_adr[2],
-                volatility_sanity_cap_atr[0],
-                volatility_sanity_cap_atr[1],
-                zonestopob,
-                zonestopfvg,
-                zonestopifvg,
-                zonestopsweep,
-            ]
+    risk_4_1_params_numpy = [
+        adr_stop[0],
+        adr_stop[1],
+        adr_stop[2],
+        atr_stop[0],
+        atr_stop[1],
+        fixed_percent_stop,
+        fixed_dollar_stop,
+        volatility_sanity_cap_adr[0],
+        volatility_sanity_cap_adr[1],
+        volatility_sanity_cap_adr[2],
+        volatility_sanity_cap_atr[0],
+        volatility_sanity_cap_atr[1],
+        zonestopob,
+        zonestopfvg,
+        zonestopifvg,
+        zonestopsweep,
+    ]
 
     risk_params_4_2 = json_data.get("risk", {})
     sizing = risk_params_4_2.get("sizing", "")
@@ -224,7 +224,9 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
     )  #  (int # of timebasedtargets, [# of candles of time (int), % of position to exit], [# of candles of time, % of position to exit], ...)
     # trailing_only_mode = risk_params_4_3.get("trailing_only_mode", False)
     risk_params_4_4 = {}
-    risk_params_4_4 = risk_params_4_3.get("then", {}) # TODO: Currently the mutliple TPs' don't work with a singlar TP. 
+    risk_params_4_4 = risk_params_4_3.get(
+        "then", {}
+    )  # TODO: Currently the mutliple TPs' don't work with a singlar TP.
     if len(r_multiple_targets) <= 5:
         r_multiple_targets.extend(
             [[np.nan, np.nan] for _ in range(5 - len(r_multiple_targets))]
