@@ -129,7 +129,7 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
     adr_stop = risk_params_4_1.get("adrstop", [np.nan, np.nan, np.nan])
     atr_stop = risk_params_4_1.get("atrstop", [np.nan, np.nan])
     if not np.isnan(adr_stop[0]):
-        extra_indicators.append(f"adr_{adr_stop[0]}_{adr_stop[1]}")
+        extra_indicators.append(f"adr_{adr_stop[0]}_{int(adr_stop[1])}")
     if not np.isnan(atr_stop[0]):
         extra_indicators.append(f"atr_{int(atr_stop[0])}")
 
@@ -148,14 +148,12 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
     if not np.isnan(volatility_sanity_cap_atr[0]):
         extra_indicators.append(f"atr_{int(volatility_sanity_cap_atr[0])}")
 
-    zonestopob = risk_params_4_1.get("zonestopob", False)
-    zonestopfvg = risk_params_4_1.get("zonestopfvg", False)
-    zonestopifvg = risk_params_4_1.get("zonestopifvg", False)
-    zonestopsweep = risk_params_4_1.get("zonestopsweep", False)
+    zonestopob = 1.0 if risk_params_4_1.get("zonestopob", 0.0) == True else 0.0
+    zonestopfvg = 1.0 if risk_params_4_1.get("zonestopfvg", 0.0) == True else 0.0
+    zonestopifvg = 1.0 if risk_params_4_1.get("zonestopifvg", 0.0) == True else 0.0
+    zonestopsweep = 1.0 if risk_params_4_1.get("zonestopsweep", 0.0) == True else 0.0
 
-    risk_4_1_params_numpy = (
-        np.array(  # TODO: didn't add SL for a few of the features like FVG, etc..
-            [
+    risk_4_1_params_numpy =  [
                 adr_stop[0],
                 adr_stop[1],
                 adr_stop[2],
@@ -173,8 +171,6 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
                 zonestopifvg,
                 zonestopsweep,
             ]
-        )
-    )
 
     risk_params_4_2 = json_data.get("risk", {})
     sizing = risk_params_4_2.get("sizing", "")
@@ -218,7 +214,7 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
     risk_params_4_3 = json_data.get("target", {})
     r_multiple_targets = risk_params_4_3.get(
         "rr_multiple_targets", [[np.nan, np.nan] for _ in range(5)]
-    )  # (int # of targets, [risk_multiple, % of position to exit], [risk_multiple, % of position to exit], ...)
+    )  # [risk_multiple, % of position to exit], [risk_multiple, % of position to exit], ...)
     fixed_percent_target = risk_params_4_3.get("fixed_percent_target", np.nan)
     if np.isnan(fixed_percent_target):
         fixed_dollar_target = risk_params_4_3.get("fixed_dollar_target", np.nan)
@@ -228,12 +224,12 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
     )  #  (int # of timebasedtargets, [# of candles of time (int), % of position to exit], [# of candles of time, % of position to exit], ...)
     # trailing_only_mode = risk_params_4_3.get("trailing_only_mode", False)
     risk_params_4_4 = {}
-    risk_params_4_4 = risk_params_4_3.get("then", {})
-    if len(r_multiple_targets) < 5:
+    risk_params_4_4 = risk_params_4_3.get("then", {}) # TODO: Currently the mutliple TPs' don't work with a singlar TP. 
+    if len(r_multiple_targets) <= 5:
         r_multiple_targets.extend(
             [[np.nan, np.nan] for _ in range(5 - len(r_multiple_targets))]
         )
-    if len(time_based_takes) < 5:
+    if len(time_based_takes) <= 5:
         time_based_takes.extend(
             [[np.nan, np.nan] for _ in range(5 - len(time_based_takes))]
         )
