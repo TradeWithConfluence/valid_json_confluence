@@ -106,6 +106,22 @@ def validate_json_file(json_data):
         or structure_trail < 2.0
     ):
         return 210  # Invalid trail value
+    risk_params_4_3 = json_data.get("target", {})
+    r_multiple_targets = risk_params_4_3.get(
+        "rr_multiple_targets", [[np.nan, np.nan] for _ in range(5)]
+    )  # [risk_multiple, % of position to exit], [risk_multiple, % of position to exit], ...)
+
+    total_risk_multiple = sum(t[1] for t in r_multiple_targets if not np.isnan(t[1]))
+    if round(total_risk_multiple) > 100:
+        return 221
+    if round(total_risk_multiple) < 100:
+        if round(total_risk_multiple) == 0:
+            r_multiple_targets[0] = [float('inf'), 100-total_risk_multiple]
+        else:
+            r_multiple_targets.append([float('inf'), 100-total_risk_multiple])
+    if len(r_multiple_targets) > 5:
+        return 220
+
 
     return 200
 

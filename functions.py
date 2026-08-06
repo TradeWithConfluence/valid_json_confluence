@@ -227,14 +227,15 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
     risk_params_4_4 = risk_params_4_3.get(
         "then", {}
     )  # TODO: Currently the mutliple TPs' don't work with a singlar TP.
-    if len(r_multiple_targets) <= 5:
-        r_multiple_targets.extend(
-            [[np.nan, np.nan] for _ in range(5 - len(r_multiple_targets))]
-        )
-    if len(time_based_takes) <= 5:
-        time_based_takes.extend(
-            [[np.nan, np.nan] for _ in range(5 - len(time_based_takes))]
-        )
+
+    total_risk_multiple = sum(t[1] for t in r_multiple_targets if not np.isnan(t[1]))
+    if round(total_risk_multiple) < 100:
+        if round(total_risk_multiple) == 0:
+            r_multiple_targets[0] = [999999999, 100-total_risk_multiple]
+        else:
+            r_multiple_targets.append([999999999, 100-total_risk_multiple])
+    if len(r_multiple_targets) > 5:
+        return 220
 
     risk_4_3_params_lists_numpy = np.array(
         [
