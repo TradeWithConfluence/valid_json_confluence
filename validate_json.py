@@ -107,6 +107,7 @@ def validate_json_file(json_data):
     ):
         return 210  # Invalid trail value
     risk_params_4_3 = json_data.get("target", {})
+
     r_multiple_targets = risk_params_4_3.get(
         "rr_multiple_targets", [[np.nan, np.nan] for _ in range(5)]
     )  # [risk_multiple, % of position to exit], [risk_multiple, % of position to exit], ...)
@@ -116,12 +117,11 @@ def validate_json_file(json_data):
         return 221
     if round(total_risk_multiple) < 100:
         if round(total_risk_multiple) == 0:
-            r_multiple_targets[0] = [float('inf'), 100-total_risk_multiple]
+            r_multiple_targets[0] = [float("9" * 10), 100 - total_risk_multiple]
         else:
-            r_multiple_targets.append([float('inf'), 100-total_risk_multiple])
+            r_multiple_targets.append([float("9" * 10), 100 - total_risk_multiple])
     if len(r_multiple_targets) > 5:
         return 220
-
 
     return 200
 
