@@ -116,7 +116,7 @@ def validate_json_file(json_data):
     if round(total_risk_multiple) > 100:
         return 221
     if round(total_risk_multiple) < 100:
-        if round(total_risk_multiple) == 0:
+        if round(total_risk_multiple) == 0 and len(r_multiple_targets) > 0:
             r_multiple_targets[0] = [float("9" * 10), 100 - total_risk_multiple]
         else:
             r_multiple_targets.append([float("9" * 10), 100 - total_risk_multiple])
