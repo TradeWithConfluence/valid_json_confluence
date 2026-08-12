@@ -11,9 +11,12 @@ def validate_json_file(json_data):
     if (
         type(json_data["instrument"]) is str
         and json_data["instrument"] == "equity"
-        and CandleSize(json_data["timeframe"]) < CandleSize.MINUTE_1
+        and CandleSize(json_data["timeframe"]) < CandleSize.MINUTE_15
     ):
         return 201
+    if (json_data.get('check_universe_frequency', None) and CandleSize(json_data['check_universe_frequency'])) < CandleSize.WEEK_1:
+        return 211
+
 
     (
         setup_indicators,
