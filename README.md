@@ -1,9 +1,12 @@
 # Confluence_JSON_Tester
 
 ## Installation
+
 All dependencies are managed via [uv](https://docs.astral.sh/uv/).
-- Please follow the [installation instructions](https://docs.astral.sh/uv/getting-started/installation/#standalone-installer)
-- Please install rust through
+
+- Follow the [installation instructions](https://docs.astral.sh/uv/getting-started/installation/#standalone-installer).
+- Install Rust:
+
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   
 ```
