@@ -1,7 +1,9 @@
-from enum import Enum
+from fast_enum import FastEnum
 
 
-class CandleSize(Enum):
+class CandleSize(metaclass=FastEnum):
+    __slots__ = ("seconds",)
+
     MINUTE_1 = ("1m", 60)
     MINUTE_2 = ("2m", 120)
     MINUTE_3 = ("3m", 180)
@@ -30,11 +32,9 @@ class CandleSize(Enum):
     MONTH_6 = ("6mo", 15552000)
     YEAR_1 = ("1y", 31536000)
 
-    def __new__(cls, value, seconds):
-        obj = object.__new__(cls)
-        obj._value_ = value
-        obj.seconds = seconds
-        return obj
+    def __init__(self, value, seconds, name=None):
+        self.value = value
+        self.seconds = seconds
 
     def __lt__(self, other):
         if isinstance(other, CandleSize):
