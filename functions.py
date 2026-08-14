@@ -228,17 +228,41 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
         "then", {}
     )  # TODO: Currently the mutliple TPs' don't work with a singlar TP.
 
+    # Compact leading empty slots: the engine keys "are targets configured?"
+    # off slot 0, so a config that leaves slot 0 empty (targets starting at
+    # slot 1) would otherwise be treated as having no targets at all. Same
+    # proxy applies to time_based_takes.
+    for targets in (r_multiple_targets, time_based_takes):
+        first_real = next(
+            (
+                i
+                for i, t in enumerate(targets)
+                if not np.isnan(t[0]) and not np.isnan(t[1])
+            ),
+            None,
+        )
+        if first_real is not None and first_real > 0:
+            targets[:] = targets[first_real:]
+
     total_risk_multiple = sum(t[1] for t in r_multiple_targets if not np.isnan(t[1]))
     if round(total_risk_multiple) < 100:
+        remainder = [float("9" * 10), 100 - total_risk_multiple]
         if round(total_risk_multiple) == 0:
-            r_multiple_targets[0] = [float("9" * 10), 100 - total_risk_multiple]
+            r_multiple_targets[0] = remainder
         else:
-            r_multiple_targets.append([float("9" * 10), 100 - total_risk_multiple])
+            last_real = max(
+                i for i, t in enumerate(r_multiple_targets) if not np.isnan(t[1])
+            )
+            r_multiple_targets.insert(last_real + 1, remainder)
     if len(r_multiple_targets) > 5:
         return 220
     if len(r_multiple_targets) < 5:
         r_multiple_targets.extend(
             [np.nan, np.nan] for _ in range(5 - len(r_multiple_targets))
+        )
+    if len(time_based_takes) < 5:
+        time_based_takes.extend(
+            [np.nan, np.nan] for _ in range(5 - len(time_based_takes))
         )
 
     risk_4_3_params_lists_numpy = np.array(
