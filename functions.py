@@ -224,9 +224,7 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
     )  #  (int # of timebasedtargets, [# of candles of time (int), % of position to exit], [# of candles of time, % of position to exit], ...)
     # trailing_only_mode = risk_params_4_3.get("trailing_only_mode", False)
     risk_params_4_4 = {}
-    risk_params_4_4 = risk_params_4_3.get(
-        "then", {}
-    )  # TODO: Currently the mutliple TPs' don't work with a singlar TP.
+    risk_params_4_4 = risk_params_4_3.get("then", {})
 
     total_risk_multiple = sum(t[1] for t in r_multiple_targets if not np.isnan(t[1]))
     if round(total_risk_multiple) < 100:
@@ -305,26 +303,26 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
 
     risk_4_4_params_numpy = np.array(
         [
-            rr_trigger_move_stop_breakeven,
-            rr_target_lock_profit_ratchet,
-            rr_stop_lock_profit_ratchet,
-            ma_params[0],
-            ma_params[1],
-            ma_multiple,
-            atr_params[0],
-            atr_multiple,
-            sar_params[0],
-            sar_params[1],
-            sar_multiple,
-            supertrend_params[0],
-            supertrend_params[1],
-            supertrend_multiple,
-            dollar_trail,
-            percent_trail,
-            bar_trail,
-            never_widen_invariant,
-            runnerdisposition,
-            structure_trail,
+            rr_trigger_move_stop_breakeven,  # 0
+            rr_target_lock_profit_ratchet,  # 1
+            rr_stop_lock_profit_ratchet,  # 2
+            ma_params[0],  # 3
+            ma_params[1],  # 4
+            ma_multiple,  # 5
+            atr_params[0],  # 6
+            atr_multiple,  # 7
+            sar_params[0],  # 8
+            sar_params[1],  # 9
+            sar_multiple,  # 10
+            supertrend_params[0],  # 11
+            supertrend_params[1],  # 12
+            supertrend_multiple,  # 13
+            dollar_trail,  # 14
+            percent_trail,  # 15
+            bar_trail,  # 16
+            never_widen_invariant,  # 17
+            runnerdisposition,  # 18
+            structure_trail,  # 19
         ]
     )
 
