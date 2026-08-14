@@ -278,13 +278,13 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
     sar_params = sar_trail[0:2]
     if not np.isnan(sar_trail[0]):
         extra_indicators.append(
-            f"parabolicsar_{int(sar_params[0])}_{int(sar_params[1])}"
-        )
+            f"parabolicsar_{sar_params[0]}_{sar_params[1]}"
+        )  # keep fractional step/max (int() would truncate 0.02/0.2 to 0)
     supertrend_trail = risk_params_4_4.get("supertrend_trail", [np.nan, np.nan, np.nan])
     supertrend_params = supertrend_trail[0:2]
     if not np.isnan(supertrend_trail[0]):
         extra_indicators.append(
-            f"supertrendline_{int(supertrend_params[0])}_{int(supertrend_params[1])}"
+            f"supertrendline_{int(supertrend_params[0])}_{supertrend_params[1]}"
         )
     dollar_trail = risk_params_4_4.get("dollar_trail", np.nan)
     percent_trail = risk_params_4_4.get("percent_trail", np.nan)
