@@ -210,14 +210,12 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
         ]
     )
 
-    fixed_dollar_target = np.nan
     risk_params_4_3 = json_data.get("target", {})
     r_multiple_targets = risk_params_4_3.get(
         "rr_multiple_targets", [[np.nan, np.nan] for _ in range(5)]
     )  # [risk_multiple, % of position to exit], [risk_multiple, % of position to exit], ...)
     fixed_percent_target = risk_params_4_3.get("fixed_percent_target", np.nan)
-    if np.isnan(fixed_percent_target):
-        fixed_dollar_target = risk_params_4_3.get("fixed_dollar_target", np.nan)
+    fixed_dollar_target = risk_params_4_3.get("fixed_dollar_target", np.nan)
     level_target = risk_params_4_3.get("level_target", np.nan)
     time_based_takes = risk_params_4_3.get(
         "time_based_takes", [[np.nan, np.nan] for _ in range(5)]
@@ -225,18 +223,27 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None):
     # trailing_only_mode = risk_params_4_3.get("trailing_only_mode", False)
     risk_params_4_4 = {}
     risk_params_4_4 = risk_params_4_3.get("then", {})
-
-    total_risk_multiple = sum(t[1] for t in r_multiple_targets if not np.isnan(t[1]))
-    if round(total_risk_multiple) < 100:
-        if round(total_risk_multiple) == 0:
-            r_multiple_targets[0] = [float("9" * 10), 100 - total_risk_multiple]
-        else:
-            r_multiple_targets.append([float("9" * 10), 100 - total_risk_multiple])
-    if len(r_multiple_targets) > 5:
+    arr = np.array(r_multiple_targets)
+    if not np.isnan(arr).all():
+        total_risk_multiple = sum(
+            t[1] for t in r_multiple_targets if not np.isnan(t[1])
+        )
+        if round(total_risk_multiple) < 100:
+            if round(total_risk_multiple) == 0:
+                r_multiple_targets[0] = [float("9" * 10), 100 - total_risk_multiple]
+            else:
+                r_multiple_targets.append([float("9" * 10), 100 - total_risk_multiple])
+        if len(r_multiple_targets) > 5:
+            return 220
+        if len(r_multiple_targets) < 5:
+            r_multiple_targets.extend(
+                [np.nan, np.nan] for _ in range(5 - len(r_multiple_targets))
+            )
+    if len(time_based_takes) > 5:
         return 220
-    if len(r_multiple_targets) < 5:
-        r_multiple_targets.extend(
-            [np.nan, np.nan] for _ in range(5 - len(r_multiple_targets))
+    if len(time_based_takes) < 5:
+        time_based_takes.extend(
+            [np.nan, np.nan] for _ in range(5 - len(time_based_takes))
         )
 
     risk_4_3_params_lists_numpy = np.array(
