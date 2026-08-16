@@ -123,15 +123,40 @@ def obtain_conditions_for_setup_indicators(
             condition_for_setup_indicators[indicator_string] = arr
     return setup_indicators, condition_for_setup_indicators, extra_indicators
 
+
 def remove_invalid_from_list(data, risk_params_to_extract: list[int] | None = None):
     if risk_params_to_extract is None:
         return data
     return [data[i] for i in risk_params_to_extract]
 
 
-def extract_risk_params(json_data, extra_indicators: list[str] | None = None, risk_params_to_extract: list[int] | None = None, recurse_state: bool = False):
-    if json_data.get('direction', "") == 'both' and not recurse_state:
-        return [remove_invalid_from_list(extract_risk_params(json_data.get('long', {}), extra_indicators=extra_indicators), risk_params_to_extract), remove_invalid_from_list(extract_risk_params(json_data.get('short', {}), extra_indicators=extra_indicators), risk_params_to_extract), remove_invalid_from_list(extract_risk_params(json_data, extra_indicators=extra_indicators, recurse_state=True), list(set(list(range(0, 8, 1))) - set(risk_params_to_extract)))]
+def extract_risk_params(
+    json_data,
+    extra_indicators: list[str] | None = None,
+    risk_params_to_extract: list[int] | None = None,
+    recurse_state: bool = False,
+):
+    if json_data.get("direction", "") == "both" and not recurse_state:
+        return [
+            remove_invalid_from_list(
+                extract_risk_params(
+                    json_data.get("long", {}), extra_indicators=extra_indicators
+                ),
+                risk_params_to_extract,
+            ),
+            remove_invalid_from_list(
+                extract_risk_params(
+                    json_data.get("short", {}), extra_indicators=extra_indicators
+                ),
+                risk_params_to_extract,
+            ),
+            remove_invalid_from_list(
+                extract_risk_params(
+                    json_data, extra_indicators=extra_indicators, recurse_state=True
+                ),
+                list(set(range(0, 8, 1)) - set(risk_params_to_extract)),
+            ),
+        ]
     risk_params_4_1 = json_data.get("stop", {})
     adr_stop = risk_params_4_1.get("adrstop", [np.nan, np.nan, np.nan])
     atr_stop = risk_params_4_1.get("atrstop", [np.nan, np.nan])
@@ -417,14 +442,14 @@ def extract_risk_params(json_data, extra_indicators: list[str] | None = None, ri
         ]
     ).astype(np.float64)
     return (
-        extra_indicators, # 0
-        risk_4_1_params_numpy, # 1
-        risk_4_2_params_numpy, # 2
-        risk_4_3_params_numpy, # 3
-        risk_4_3_params_lists_numpy, # 4
-        risk_4_4_params_numpy, # 5
-        risk_4_5_params_numpy, # 6
-        risk_4_6_params_numpy, # 7
+        extra_indicators,  # 0
+        risk_4_1_params_numpy,  # 1
+        risk_4_2_params_numpy,  # 2
+        risk_4_3_params_numpy,  # 3
+        risk_4_3_params_lists_numpy,  # 4
+        risk_4_4_params_numpy,  # 5
+        risk_4_5_params_numpy,  # 6
+        risk_4_6_params_numpy,  # 7
     )
 
 
@@ -451,6 +476,13 @@ def get_indicator_conditions_from_jsons(json_data):
         extra_indicators=[],
         stage_name="universe",
     )
+
+    setup_indicators = list(map(str.lower, setup_indicators))
+    entry_indicators = list(map(str.lower, entry_indicators))
+    extra_indicators = list(map(str.lower, extra_indicators))
+    universe_indicators = list(map(str.lower, universe_indicators))
+    universe_extra_indicators = list(map(str.lower, universe_extra_indicators))
+
     return (
         setup_indicators,
         condition_for_setup_indicators,
