@@ -4,3 +4,4 @@ from .functions import (
     obtain_conditions_for_setup_indicators,
 )
 from .validate_json import validate_json_file
+from .classes import CandleSize

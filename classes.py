@@ -35,6 +35,7 @@ class CandleSize(metaclass=FastEnum):
     def __init__(self, value, seconds, name=None):
         self.value = value
         self.seconds = seconds
+        self.name = name
 
     def __lt__(self, other):
         if isinstance(other, CandleSize):
