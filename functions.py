@@ -137,16 +137,19 @@ def extract_risk_params(
     recurse_state: bool = False,
 ):
     if json_data.get("direction", "") == "both" and not recurse_state:
+        sides = json_data.get("sides", {})
         return [
             remove_invalid_from_list(
                 extract_risk_params(
-                    json_data.get("long", {}), extra_indicators=extra_indicators
+                    sides.get("long") or json_data.get("long", {}),
+                    extra_indicators=extra_indicators,
                 ),
                 risk_params_to_extract,
             ),
             remove_invalid_from_list(
                 extract_risk_params(
-                    json_data.get("short", {}), extra_indicators=extra_indicators
+                    sides.get("short") or json_data.get("short", {}),
+                    extra_indicators=extra_indicators,
                 ),
                 risk_params_to_extract,
             ),
