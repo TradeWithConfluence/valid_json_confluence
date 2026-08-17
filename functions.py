@@ -108,12 +108,12 @@ def obtain_conditions_for_setup_indicators(
                     or not np.isnan(arr[3])
                 ):
                     return None, None, None
-                arr[0] = setup_indicator["value"]
-                arr[2] = setup_indicator["value2"]
-                if arr[0] < arr[2]:
-                    temp_arr_val = arr[2]
-                    arr[2] = arr[0]
-                    arr[0] = temp_arr_val
+                arr[0] = max(
+                    float(setup_indicator["value2"]), float(setup_indicator["value"])
+                )  # upper
+                arr[2] = min(
+                    float(setup_indicator["value2"]), float(setup_indicator["value"])
+                )  # lower
             elif setup_indicator["op"] == "within_ticks":
                 arr[10] = setup_indicator["value2"]  # tick amount
                 arr[8] = setup_indicator["value"]  # indicator/static
@@ -188,10 +188,10 @@ def extract_risk_params(
     if not np.isnan(volatility_sanity_cap_atr[0]):
         extra_indicators.append(f"atr_{int(volatility_sanity_cap_atr[0])}")
 
-    zonestopob = 1.0 if risk_params_4_1.get("zonestopob", 0.0) == True else 0.0
-    zonestopfvg = 1.0 if risk_params_4_1.get("zonestopfvg", 0.0) == True else 0.0
-    zonestopifvg = 1.0 if risk_params_4_1.get("zonestopifvg", 0.0) == True else 0.0
-    zonestopsweep = 1.0 if risk_params_4_1.get("zonestopsweep", 0.0) == True else 0.0
+    zonestopob = 1.0 if risk_params_4_1.get("zonestopob", 0.0) else 0.0
+    zonestopfvg = 1.0 if risk_params_4_1.get("zonestopfvg", 0.0) else 0.0
+    zonestopifvg = 1.0 if risk_params_4_1.get("zonestopifvg", 0.0) else 0.0
+    zonestopsweep = 1.0 if risk_params_4_1.get("zonestopsweep", 0.0) else 0.0
 
     risk_4_1_params_numpy = [
         adr_stop[0],
