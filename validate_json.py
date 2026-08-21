@@ -7,6 +7,7 @@ from .functions import get_indicator_conditions_from_jsons
 
 
 def validate_json_file(json_data):
+    backtest_timeframe = json_data["timeframe"]
     # ensure if equity >= 15min  timeframe
     if (
         type(json_data["instrument"]) is str
@@ -19,7 +20,6 @@ def validate_json_file(json_data):
         and CandleSize(json_data.get("check_universe_frequency")) < CandleSize.WEEK_1
     ):
         return 211
-
     (
         setup_indicators,
         condition_for_setup_indicators,
@@ -29,7 +29,7 @@ def validate_json_file(json_data):
         condition_for_universe_indicators,
         extra_indicators,
         _,
-    ) = get_indicator_conditions_from_jsons(json_data)
+    ) = get_indicator_conditions_from_jsons(json_data, backtest_timeframe)
 
     if setup_indicators is None or condition_for_setup_indicators is None:
         return 203  # Invalid setup indicators

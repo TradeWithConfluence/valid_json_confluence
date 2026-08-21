@@ -7,7 +7,7 @@ def obtain_conditions_for_setup_indicators(
     json_data_conditions,
     extra_indicators: list[str] | None = None,
     stage_name: str = "setup",
-    overall_backtest_timeframe: str = "15m"
+    overall_backtest_timeframe: str = "15m",
 ):
     if extra_indicators is None:
         extra_indicators = []
@@ -469,10 +469,16 @@ def extract_risk_params(
     )
 
 
-def get_indicator_conditions_from_jsons(json_data):
+def get_indicator_conditions_from_jsons(
+    json_data, overall_backtest_timeframe: str = "15m"
+):
+
     setup_indicators, condition_for_setup_indicators, extra_indicators = (
         obtain_conditions_for_setup_indicators(
-            json_data.get("setup"), extra_indicators=[], stage_name="setup"
+            json_data.get("setup"),
+            extra_indicators=[],
+            stage_name="setup",
+            overall_backtest_timeframe=overall_backtest_timeframe,
         )
     )
 
@@ -481,6 +487,7 @@ def get_indicator_conditions_from_jsons(json_data):
             json_data.get("entry", {}).get("conditions", []),
             extra_indicators=extra_indicators,
             stage_name="trigger",
+            overall_backtest_timeframe=overall_backtest_timeframe,
         )
     )
     (
