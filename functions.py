@@ -7,6 +7,7 @@ def obtain_conditions_for_setup_indicators(
     json_data_conditions,
     extra_indicators: list[str] | None = None,
     stage_name: str = "setup",
+    overall_backtest_timeframe: str = "15m"
 ):
     if extra_indicators is None:
         extra_indicators = []
@@ -20,8 +21,15 @@ def obtain_conditions_for_setup_indicators(
             and setup_indicator["stage"] == stage_name
         ):
             indicator_string = setup_indicator["fn"]
+            if setup_indicator["stage"] != "universe":
+                indicator_timeframe = setup_indicator.get("timeframe", "")
+                if indicator_timeframe == "":
+                    indicator_timeframe = overall_backtest_timeframe
+            else:
+                indicator_timeframe = "1d"
             for period in setup_indicator["args"].values():
                 indicator_string += f"_{period}"
+            indicator_string += f"_{indicator_timeframe}"
             setup_indicators.append(indicator_string)
             arr = []
             if (
