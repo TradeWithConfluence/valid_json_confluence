@@ -7,12 +7,18 @@ from .functions import get_indicator_conditions_from_jsons
 
 
 def validate_json_file(json_data):
-    backtest_timeframe = json_data["timeframe"]
+    # C10: validate the timeframe FIRST — the old code parsed it at :15
+    # (before this guard), so an invalid value crashed instead of returning 202.
+    try:
+        backtest_timeframe_cs = CandleSize(json_data["timeframe"])
+    except (ValueError, KeyError):
+        return 202
+    backtest_timeframe = backtest_timeframe_cs.value
     # ensure if equity >= 15min  timeframe
     if (
         type(json_data["instrument"]) is str
         and json_data["instrument"] == "equity"
-        and CandleSize(json_data["timeframe"]) < CandleSize.MINUTE_15
+        and backtest_timeframe_cs < CandleSize.MINUTE_15
     ):
         return 201
     if (
@@ -37,10 +43,6 @@ def validate_json_file(json_data):
         return 204  # Invalid entry indicators
     if universe_indicators is None or condition_for_universe_indicators is None:
         return 205  # Invalid universe indicators
-    try:
-        CandleSize(json_data["timeframe"])
-    except ValueError:
-        return 202
 
     risk_params_4_3 = json_data.get("target", {})
     risk_params_4_4 = risk_params_4_3.get("then", {})
