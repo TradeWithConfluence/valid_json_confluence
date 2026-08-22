@@ -177,7 +177,7 @@ def extract_risk_params(
     adr_stop = risk_params_4_1.get("adrstop", [np.nan, np.nan, np.nan])
     atr_stop = risk_params_4_1.get("atrstop", [np.nan, np.nan])
     if not np.isnan(adr_stop[0]):
-        extra_indicators.append(f"adr_{adr_stop[0]}_{int(adr_stop[1])}")
+        extra_indicators.append(f"adr_{int(adr_stop[0])}_{adr_stop[1]}")
     if not np.isnan(atr_stop[0]):
         extra_indicators.append(f"atr_{int(atr_stop[0])}")
 
@@ -191,7 +191,7 @@ def extract_risk_params(
     )
     if not np.isnan(volatility_sanity_cap_adr[0]):
         extra_indicators.append(
-            f"adr_{volatility_sanity_cap_adr[0]}_{int(volatility_sanity_cap_adr[1])}"
+            f"adr_{int(volatility_sanity_cap_adr[0])}_{volatility_sanity_cap_adr[1]}"
         )
     if not np.isnan(volatility_sanity_cap_atr[0]):
         extra_indicators.append(f"atr_{int(volatility_sanity_cap_atr[0])}")
