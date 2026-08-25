@@ -67,9 +67,7 @@ def validate_json_file(json_data):
     sar_trail = risk_params_4_4.get("parabolicsar_trail", [np.nan, np.nan, np.nan])
     sar_params = sar_trail[0:2]
     if not np.isnan(sar_trail[0]):
-        extra_indicators.append(
-            f"parabolicsar_{int(sar_params[0])}_{int(sar_params[1])}"
-        )
+        extra_indicators.append(f"parabolicsar_{sar_params[0]}_{sar_params[1]}")
     supertrend_trail = risk_params_4_4.get("supertrend_trail", [np.nan, np.nan, np.nan])
     supertrend_params = supertrend_trail[0:2]
     if not np.isnan(supertrend_trail[0]):
