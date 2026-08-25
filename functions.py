@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+
 import numpy as np
 
 from . import constants
@@ -164,24 +166,30 @@ def extract_risk_params(
         common_slots = (
             None
             if risk_params_to_extract is None
-            else list(set(range(0, 8, 1)) - set(risk_params_to_extract))
+            else sorted(set(range(0, 8, 1)) - set(risk_params_to_extract))
         )
         return [
             remove_invalid_from_list(
                 extract_risk_params(
-                    long_json, extra_indicators=extra_indicators, recurse_state=True
+                    long_json,
+                    extra_indicators=list(extra_indicators),
+                    recurse_state=True,
                 ),
                 risk_params_to_extract,
             ),
             remove_invalid_from_list(
                 extract_risk_params(
-                    short_json, extra_indicators=extra_indicators, recurse_state=True
+                    short_json,
+                    extra_indicators=list(extra_indicators),
+                    recurse_state=True,
                 ),
                 risk_params_to_extract,
             ),
             remove_invalid_from_list(
                 extract_risk_params(
-                    json_data, extra_indicators=extra_indicators, recurse_state=True
+                    json_data,
+                    extra_indicators=list(extra_indicators),
+                    recurse_state=True,
                 ),
                 common_slots,
             ),
@@ -209,10 +217,15 @@ def extract_risk_params(
     if not np.isnan(volatility_sanity_cap_atr[0]):
         extra_indicators.append(f"atr_{int(volatility_sanity_cap_atr[0])}")
 
-    zonestopob = 1.0 if risk_params_4_1.get("zonestopob", 0.0) else 0.0
-    zonestopfvg = 1.0 if risk_params_4_1.get("zonestopfvg", 0.0) else 0.0
-    zonestopifvg = 1.0 if risk_params_4_1.get("zonestopifvg", 0.0) else 0.0
-    zonestopsweep = 1.0 if risk_params_4_1.get("zonestopsweep", 0.0) else 0.0
+    def _flag(value) -> float:
+        if isinstance(value, str):
+            return 1.0 if value.strip().lower() in ("true", "1", "yes", "on") else 0.0
+        return 1.0 if value else 0.0
+
+    zonestopob = _flag(risk_params_4_1.get("zonestopob", 0.0))
+    zonestopfvg = _flag(risk_params_4_1.get("zonestopfvg", 0.0))
+    zonestopifvg = _flag(risk_params_4_1.get("zonestopifvg", 0.0))
+    zonestopsweep = _flag(risk_params_4_1.get("zonestopsweep", 0.0))
 
     # zone stops run their detectors at canonical default args so the level
     # arrays exist by the time get_dynamic_stop_levels reads them
@@ -263,15 +276,15 @@ def extract_risk_params(
 
     levelstop_flags = []
     for level_key, indicator_id in constants.LEVEL_STOP_FIELDS:
-        flag = 1.0 if risk_params_4_1.get(level_key, 0.0) else 0.0
+        flag = _flag(risk_params_4_1.get(level_key, 0.0))
         levelstop_flags.append(flag)
         if flag:
             extra_indicators.append(indicator_id)
 
     # pattern-invalidation stop: each key aggregates its whole pattern family
-    patternflaglow = 1.0 if risk_params_4_1.get("patternflaglow", 0.0) else 0.0
-    patternrangelow = 1.0 if risk_params_4_1.get("patternrangelow", 0.0) else 0.0
-    patternneckline = 1.0 if risk_params_4_1.get("patternneckline", 0.0) else 0.0
+    patternflaglow = _flag(risk_params_4_1.get("patternflaglow", 0.0))
+    patternrangelow = _flag(risk_params_4_1.get("patternrangelow", 0.0))
+    patternneckline = _flag(risk_params_4_1.get("patternneckline", 0.0))
     for family in (
         (patternflaglow, constants.PATTERN_FLAG_FAMILY),
         (patternrangelow, constants.PATTERN_RANGE_FAMILY),
@@ -349,14 +362,14 @@ def extract_risk_params(
     )
 
     risk_params_4_3 = json_data.get("target", {})
-    r_multiple_targets = risk_params_4_3.get(
-        "rr_multiple_targets", [[np.nan, np.nan] for _ in range(5)]
+    r_multiple_targets = copy.deepcopy(
+        risk_params_4_3.get("rr_multiple_targets", [[np.nan, np.nan] for _ in range(5)])
     )  # [risk_multiple, % of position to exit], [risk_multiple, % of position to exit], ...)
     fixed_percent_target = risk_params_4_3.get("fixed_percent_target", np.nan)
     fixed_dollar_target = risk_params_4_3.get("fixed_dollar_target", np.nan)
     level_target = risk_params_4_3.get("level_target", np.nan)
-    time_based_takes = risk_params_4_3.get(
-        "time_based_takes", [[np.nan, np.nan] for _ in range(5)]
+    time_based_takes = copy.deepcopy(
+        risk_params_4_3.get("time_based_takes", [[np.nan, np.nan] for _ in range(5)])
     )  #  (int # of timebasedtargets, [# of candles of time (int), % of position to exit], [# of candles of time, % of position to exit], ...)
     # trailing_only_mode = risk_params_4_3.get("trailing_only_mode", False)
     risk_params_4_4 = {}
