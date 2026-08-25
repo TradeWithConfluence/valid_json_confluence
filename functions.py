@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from . import constants
+
 
 def obtain_conditions_for_setup_indicators(
     json_data_conditions,
@@ -201,6 +203,74 @@ def extract_risk_params(
     zonestopifvg = 1.0 if risk_params_4_1.get("zonestopifvg", 0.0) else 0.0
     zonestopsweep = 1.0 if risk_params_4_1.get("zonestopsweep", 0.0) else 0.0
 
+    # zone stops run their detectors at canonical default args so the level
+    # arrays exist by the time get_dynamic_stop_levels reads them
+    if zonestopfvg:
+        extra_indicators.append(f"fvgtop_{constants.ZONE_STOP_FVG_ATR_MULT}")
+        extra_indicators.append(f"fvgbottom_{constants.ZONE_STOP_FVG_ATR_MULT}")
+    if zonestopifvg:
+        extra_indicators.append(f"ifvgtop_{constants.ZONE_STOP_IFVG_ATR_MULT}")
+        extra_indicators.append(f"ifvgbottom_{constants.ZONE_STOP_IFVG_ATR_MULT}")
+    if zonestopob:
+        extra_indicators.append(
+            f"orderblock_{constants.ZONE_STOP_OB_DISPLACEMENT}_"
+            f"{constants.ZONE_STOP_OB_MEAN_THRESHOLD}"
+        )
+    if zonestopsweep:
+        extra_indicators.append(f"liquiditysweep_{constants.ZONE_STOP_SWEEP_ATR_MULT}")
+
+    def _stop_candles(value):
+        # accept either a bare candle count or {"candles": N}
+        if isinstance(value, dict):
+            value = value.get("candles", np.nan)
+        try:
+            candles = float(int(value))
+        except (TypeError, ValueError):
+            return np.nan
+        return candles if candles >= 1 else np.nan
+
+    structurelowstop = _stop_candles(risk_params_4_1.get("structurelowstop"))
+    structurehighstop = _stop_candles(risk_params_4_1.get("structurehighstop"))
+    structurepivotlowstop = _stop_candles(risk_params_4_1.get("structurepivotlowstop"))
+    structurepivothighstop = _stop_candles(
+        risk_params_4_1.get("structurepivothighstop")
+    )
+    if not np.isnan(structurelowstop):
+        extra_indicators.append(f"donchianlower_{int(structurelowstop)}")
+    if not np.isnan(structurehighstop):
+        extra_indicators.append(f"donchianupper_{int(structurehighstop)}")
+    if not np.isnan(structurepivotlowstop):
+        extra_indicators.append(f"fractallow_{int(structurepivotlowstop)}")
+    if not np.isnan(structurepivothighstop):
+        extra_indicators.append(f"fractalhigh_{int(structurepivothighstop)}")
+
+    levelstop_ticks = risk_params_4_1.get("levelstop_ticks", np.nan)
+    try:
+        levelstop_ticks = float(levelstop_ticks)
+    except (TypeError, ValueError):
+        levelstop_ticks = np.nan
+
+    levelstop_flags = []
+    for level_key, indicator_id in constants.LEVEL_STOP_FIELDS:
+        flag = 1.0 if risk_params_4_1.get(level_key, 0.0) else 0.0
+        levelstop_flags.append(flag)
+        if flag:
+            extra_indicators.append(indicator_id)
+
+    # pattern-invalidation stop: each key aggregates its whole pattern family
+    patternflaglow = 1.0 if risk_params_4_1.get("patternflaglow", 0.0) else 0.0
+    patternrangelow = 1.0 if risk_params_4_1.get("patternrangelow", 0.0) else 0.0
+    patternneckline = 1.0 if risk_params_4_1.get("patternneckline", 0.0) else 0.0
+    for family in (
+        (patternflaglow, constants.PATTERN_FLAG_FAMILY),
+        (patternrangelow, constants.PATTERN_RANGE_FAMILY),
+        (patternneckline, constants.PATTERN_NECKLINE_FAMILY),
+    ):
+        enabled, members = family
+        if enabled:
+            for name, args in members:
+                extra_indicators.append(f"{name}_{args}")
+
     risk_4_1_params_numpy = [
         adr_stop[0],
         adr_stop[1],
@@ -218,6 +288,15 @@ def extract_risk_params(
         zonestopfvg,
         zonestopifvg,
         zonestopsweep,
+        structurelowstop,
+        structurehighstop,
+        structurepivotlowstop,
+        structurepivothighstop,
+        levelstop_ticks,
+        *levelstop_flags,
+        patternflaglow,
+        patternrangelow,
+        patternneckline,
     ]
 
     risk_params_4_2 = json_data.get("risk", {})
