@@ -146,6 +146,10 @@ def extract_risk_params(
     risk_params_to_extract: list[int] | None = None,
     recurse_state: bool = False,
 ):
+    if extra_indicators is None:
+        # the sides recursion below mutates this list; standalone callers
+        # (validation endpoints) pass nothing
+        extra_indicators = []
     direction = json_data.get("direction", "")
     if direction in ("both", "long", "short") and not recurse_state:
         sides = json_data.get("sides", {})
@@ -155,6 +159,13 @@ def extract_risk_params(
             long_json = long_json or json_data
         elif direction == "short":
             short_json = short_json or json_data
+        # the universal vector keeps the slots NOT requested for the sides;
+        # with no slot list (standalone/validation calls) nothing is dropped
+        common_slots = (
+            None
+            if risk_params_to_extract is None
+            else list(set(range(0, 8, 1)) - set(risk_params_to_extract))
+        )
         return [
             remove_invalid_from_list(
                 extract_risk_params(
@@ -172,7 +183,7 @@ def extract_risk_params(
                 extract_risk_params(
                     json_data, extra_indicators=extra_indicators, recurse_state=True
                 ),
-                list(set(range(0, 8, 1)) - set(risk_params_to_extract)),
+                common_slots,
             ),
         ]
     risk_params_4_1 = json_data.get("stop", {})
