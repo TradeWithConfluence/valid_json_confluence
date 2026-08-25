@@ -20,7 +20,7 @@ R41_ZONE_SWEEP = 15
 LEVEL_STOP_FIELDS: list[tuple[str, str]] = [
     ("levelstop_pdl", "low1d"),
     ("levelstop_pdh", "high1d"),
-    ("levelstop_vwap", "vwap"),
+    ("levelstop_vwap", "anchoredvwap"),
     ("levelstop_priordayvwap", "priordayvwap"),
     ("levelstop_priorweekvwap", "priorweekvwap"),
     ("levelstop_poc", "poc"),
