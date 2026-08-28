@@ -371,8 +371,8 @@ def extract_risk_params(
     time_based_takes = copy.deepcopy(
         risk_params_4_3.get("time_based_takes", [[np.nan, np.nan] for _ in range(5)])
     )  #  (int # of timebasedtargets, [# of candles of time (int), % of position to exit], [# of candles of time, % of position to exit], ...)
-    setup_expiry_bars = json_data.get("setup", {}).get("setup_expiry_bars", np.nan)
-    setup_confluence_bars = json_data.get("setup", {}).get("setup_confluence_bars", np.nan)
+    setup_expiry_bars = json_data.get("entry", {}).get("setup_expiry_bars", np.nan)
+    setup_confluence_bars = json_data.get("entry", {}).get("setup_confluence_bars", np.nan)
 
     # trailing_only_mode = risk_params_4_3.get("trailing_only_mode", False)
     risk_params_4_4 = {}
@@ -420,6 +420,7 @@ def extract_risk_params(
             setup_confluence_bars,# 4
         ]
     )
+    print(risk_4_3_params_numpy)
 
     rr_trigger_move_stop_breakeven = risk_params_4_4.get(
         "move_stop_breakeven", np.nan
