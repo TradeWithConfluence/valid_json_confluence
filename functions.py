@@ -372,7 +372,9 @@ def extract_risk_params(
         risk_params_4_3.get("time_based_takes", [[np.nan, np.nan] for _ in range(5)])
     )  #  (int # of timebasedtargets, [# of candles of time (int), % of position to exit], [# of candles of time, % of position to exit], ...)
     setup_expiry_bars = json_data.get("entry", {}).get("setup_expiry_bars", np.nan)
-    setup_confluence_bars = json_data.get("entry", {}).get("setup_confluence_bars", np.nan)
+    setup_confluence_bars = json_data.get("entry", {}).get(
+        "setup_confluence_bars", np.nan
+    )
 
     # trailing_only_mode = risk_params_4_3.get("trailing_only_mode", False)
     risk_params_4_4 = {}
@@ -400,7 +402,6 @@ def extract_risk_params(
             [np.nan, np.nan] for _ in range(5 - len(time_based_takes))
         )
 
-    
     risk_4_3_params_lists_numpy = np.array(
         [
             np.asarray(r_multiple_targets, dtype=np.float64),
@@ -409,15 +410,13 @@ def extract_risk_params(
         dtype=np.float64,
     )
 
-
-
     risk_4_3_params_numpy = np.array(
         [
             fixed_percent_target,
             fixed_dollar_target,
             level_target,
-            setup_expiry_bars, #3 
-            setup_confluence_bars,# 4
+            setup_expiry_bars,  # 3
+            setup_confluence_bars,  # 4
         ]
     )
     print(risk_4_3_params_numpy)
