@@ -419,7 +419,6 @@ def extract_risk_params(
             setup_confluence_bars,  # 4
         ]
     )
-    print(risk_4_3_params_numpy)
 
     rr_trigger_move_stop_breakeven = risk_params_4_4.get(
         "move_stop_breakeven", np.nan
