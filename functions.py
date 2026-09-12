@@ -615,6 +615,33 @@ def get_indicator_conditions_from_jsons(
     universe_indicators = list(map(str.lower, universe_indicators))
     universe_extra_indicators = list(map(str.lower, universe_extra_indicators))
 
+    if json_data.get("universe_combine", "all") == "require_n_of":
+        if json_data['universe_n'] > len(universe_indicators):
+            raise ValueError(
+                f"universe_n ({json_data['universe_n']}) cannot be greater than the number of universe indicators ({len(universe_indicators)})"
+            )
+        universe_n = len(universe_indicators) - json_data['universe_n'] + 1
+    else:
+        universe_n = 1
+    if json_data.get("setup_combine", "all") == "require_n_of":
+        if json_data['setup_n'] > len(setup_indicators):
+            raise ValueError(
+                f"setup_n ({json_data['setup_n']}) cannot be greater than the number of setup indicators ({len(setup_indicators)})"
+            )
+        setup_n = len(setup_indicators) - json_data['setup_n'] + 1
+    else:
+        setup_n = 1
+    if json_data.get("entry_combine", "all") == "require_n_of":
+        if json_data['entry_n'] > len(entry_indicators):
+            raise ValueError(
+                f"entry_n ({json_data['entry_n']}) cannot be greater than the number of entry indicators ({len(entry_indicators)})"
+            )
+        entry_n = len(entry_indicators) - json_data['entry_n']  + 1
+    else:
+        entry_n = 1
+
+      
+
     return (
         setup_indicators,
         condition_for_setup_indicators,
@@ -624,4 +651,7 @@ def get_indicator_conditions_from_jsons(
         condition_for_universe_indicators,
         extra_indicators,
         universe_extra_indicators,
+        universe_n,
+        setup_n,
+        entry_n,
     )

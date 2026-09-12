@@ -18,7 +18,7 @@ def validate_json_file(json_data):
     if (
         type(json_data["instrument"]) is str
         and json_data["instrument"] == "equity"
-        and backtest_timeframe_cs < CandleSize.MINUTE_15
+        and backtest_timeframe_cs < CandleSize.MINUTE_1
     ):
         return 201
     if (
@@ -26,16 +26,29 @@ def validate_json_file(json_data):
         and CandleSize(json_data.get("check_universe_frequency")) < CandleSize.WEEK_1
     ):
         return 211
-    (
-        setup_indicators,
-        condition_for_setup_indicators,
-        entry_indicators,
-        condition_for_entry_indicators,
-        universe_indicators,
-        condition_for_universe_indicators,
-        extra_indicators,
-        _,
-    ) = get_indicator_conditions_from_jsons(json_data, backtest_timeframe)
+    try:
+        (
+            setup_indicators,
+            condition_for_setup_indicators,
+            entry_indicators,
+            condition_for_entry_indicators,
+            universe_indicators,
+            condition_for_universe_indicators,
+            extra_indicators,
+            _,
+            _,
+            _,
+            _,
+        ) = get_indicator_conditions_from_jsons(json_data, backtest_timeframe)
+    except ValueError as e:
+        # require_n_of with n greater than the number of conditions in its
+        # scope — reuse the per-scope "invalid indicators" codes
+        msg = str(e)
+        if "universe_n" in msg:
+            return 205  # Invalid universe indicators
+        if "entry_n" in msg:
+            return 204  # Invalid entry indicators
+        return 203  # Invalid setup indicators
 
     if setup_indicators is None or condition_for_setup_indicators is None:
         return 203  # Invalid setup indicators
