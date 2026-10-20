@@ -590,6 +590,11 @@ def get_indicator_conditions_from_jsons(
             overall_backtest_timeframe=overall_backtest_timeframe,
         )
     )
+    if setup_indicators is None:
+        raise ValueError(
+            "setup indicators invalid: two conditions on the same "
+            "indicator + args + timeframe with conflicting operators"
+        )
 
     entry_indicators, condition_for_entry_indicators, extra_indicators = (
         obtain_conditions_for_setup_indicators(
@@ -599,6 +604,12 @@ def get_indicator_conditions_from_jsons(
             overall_backtest_timeframe=overall_backtest_timeframe,
         )
     )
+    if entry_indicators is None:
+        raise ValueError(
+            "entry indicators invalid: two conditions on the same "
+            "indicator + args + timeframe with conflicting operators"
+        )
+
     (
         universe_indicators,
         condition_for_universe_indicators,
@@ -608,6 +619,11 @@ def get_indicator_conditions_from_jsons(
         extra_indicators=[],
         stage_name="universe",
     )
+    if universe_indicators is None:
+        raise ValueError(
+            "universe indicators invalid: two conditions on the same "
+            "indicator + args + timeframe with conflicting operators"
+        )
 
     setup_indicators = list(map(str.lower, setup_indicators))
     entry_indicators = list(map(str.lower, entry_indicators))

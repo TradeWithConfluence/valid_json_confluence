@@ -42,11 +42,12 @@ def validate_json_file(json_data):
         ) = get_indicator_conditions_from_jsons(json_data, backtest_timeframe)
     except ValueError as e:
         # require_n_of with n greater than the number of conditions in its
-        # scope — reuse the per-scope "invalid indicators" codes
+        # scope, and duplicate/conflicting conditions within a scope — reuse
+        # the per-scope "invalid indicators" codes
         msg = str(e)
-        if "universe_n" in msg:
+        if "universe" in msg:
             return 205  # Invalid universe indicators
-        if "entry_n" in msg:
+        if "entry" in msg:
             return 204  # Invalid entry indicators
         return 203  # Invalid setup indicators
 
