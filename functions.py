@@ -4,7 +4,18 @@ import copy
 
 import numpy as np
 
+from backtesting_engine.frontend_python.formula import prepare_formula_condition
+
 from . import constants
+
+# Sources the engine evaluates as conditions vs. the documented preview-only
+# sources (STRATEGY_SCHEMA_REFERENCE §1) it knows about but deliberately
+# skips here (applied outside this engine, e.g. the universe scanner's
+# `daily` sector filter). Any OTHER unknown source raises instead of being
+# dropped, so a condition from a newer builder (e.g. `formula` on an engine
+# that predates it) can never be silently skipped.
+EVALUATED_SOURCES = ("indicator", "formula")
+SKIPPED_SOURCES = ("daily", "orderflow", "structure", "pattern", "external")
 
 
 def obtain_conditions_for_setup_indicators(
@@ -20,119 +31,135 @@ def obtain_conditions_for_setup_indicators(
     setup_indicators = []
     condition_for_setup_indicators = {}
     for setup_indicator in json_data_conditions:
-        if (
-            setup_indicator["source"] == "indicator"
-            and setup_indicator["stage"] == stage_name
-        ):
+        source = setup_indicator.get("source")
+        if source in SKIPPED_SOURCES:
+            continue
+        if source not in EVALUATED_SOURCES:
+            raise ValueError(
+                f"unknown condition source {source!r}: refusing to silently "
+                f"drop the condition (stage '{setup_indicator.get('stage')}')"
+            )
+        if setup_indicator["stage"] != stage_name:
+            continue
+        if setup_indicator["stage"] != "universe":
+            indicator_timeframe = setup_indicator.get("timeframe", "")
+            if indicator_timeframe == "":
+                indicator_timeframe = overall_backtest_timeframe
+        else:
+            indicator_timeframe = "1d"
+        if source == "formula":
+            # An expression tree instead of a single fn: validate + register
+            # the normalized tree, then reference it through the synthetic
+            # id. Leaves are queued as extra indicators so they are computed
+            # (and warmup-counted) alongside the formula series itself.
+            indicator_string, leaf_ids = prepare_formula_condition(
+                setup_indicator["expr"], indicator_timeframe
+            )
+            extra_indicators.extend(leaf_ids)
+        else:
             indicator_string = setup_indicator["fn"]
-            if setup_indicator["stage"] != "universe":
-                indicator_timeframe = setup_indicator.get("timeframe", "")
-                if indicator_timeframe == "":
-                    indicator_timeframe = overall_backtest_timeframe
-            else:
-                indicator_timeframe = "1d"
             for period in setup_indicator["args"].values():
                 indicator_string += f"_{period}"
             indicator_string += f"_{indicator_timeframe}"
-            setup_indicators.append(indicator_string)
-            arr = []
-            if (
-                setup_indicator.get("is_dynamic_value") is not None
-                and setup_indicator["is_dynamic_value"]
-                and setup_indicator["dynamic_fn"]["source"] == "indicator"
-            ):
-                indicator_string_DYNAMIC: str = setup_indicator["dynamic_fn"]["fn"]
-                for period in setup_indicator["dynamic_fn"]["args"].values():
-                    indicator_string_DYNAMIC += f"_{period}"
-                indicator_string_DYNAMIC = indicator_string_DYNAMIC.lower()
-                setup_indicator["value"] = indicator_string_DYNAMIC
-                extra_indicators.append(indicator_string_DYNAMIC)
-            if condition_for_setup_indicators.get(indicator_string) is None:
-                arr = [
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                    np.nan,
-                ]
-                # arr = ['<     ', '<=  ', '>     ', '>=  ', '==  ',  '!=  ',  'crosses_above', 'crosses_below', "ticks", "percent"]
-                # - **Trends**: `increasing`, `decreasing`, `new_high`, `new_low` (the `value` field represents the N-bars lookback period)
-                # - **Boolean States**: `is_true`, `is_false`
-                # ADD HERE FIX HERE
+        setup_indicators.append(indicator_string)
+        arr = []
+        if (
+            setup_indicator.get("is_dynamic_value") is not None
+            and setup_indicator["is_dynamic_value"]
+            and setup_indicator["dynamic_fn"]["source"] == "indicator"
+        ):
+            indicator_string_DYNAMIC: str = setup_indicator["dynamic_fn"]["fn"]
+            for period in setup_indicator["dynamic_fn"]["args"].values():
+                indicator_string_DYNAMIC += f"_{period}"
+            indicator_string_DYNAMIC = indicator_string_DYNAMIC.lower()
+            setup_indicator["value"] = indicator_string_DYNAMIC
+            extra_indicators.append(indicator_string_DYNAMIC)
+        if condition_for_setup_indicators.get(indicator_string) is None:
+            arr = [
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+                np.nan,
+            ]
+            # arr = ['<     ', '<=  ', '>     ', '>=  ', '==  ',  '!=  ',  'crosses_above', 'crosses_below', "ticks", "percent"]
+            # - **Trends**: `increasing`, `decreasing`, `new_high`, `new_low` (the `value` field represents the N-bars lookback period)
+            # - **Boolean States**: `is_true`, `is_false`
+            # ADD HERE FIX HERE
 
-            else:
-                arr = condition_for_setup_indicators[indicator_string]
-            if setup_indicator["op"] == "<":
-                if not np.isnan(arr[0]) or not np.isnan(arr[1]):
-                    return None, None, None
-                arr[0] = setup_indicator["value"]
-            elif setup_indicator["op"] == "<=":
-                if not np.isnan(arr[0]) or not np.isnan(arr[1]):
-                    return None, None, None
-                arr[1] = setup_indicator["value"]
-            elif setup_indicator["op"] == ">":
-                if not np.isnan(arr[2]) or not np.isnan(arr[3]):
-                    return None, None, None
-                arr[2] = setup_indicator["value"]
-            elif setup_indicator["op"] == ">=":
-                if not np.isnan(arr[2]) or not np.isnan(arr[3]):
-                    return None, None, None
-                arr[3] = setup_indicator["value"]
-            elif setup_indicator["op"] == "==":
-                if (
-                    not np.isnan(arr[4])
-                    or not np.isnan(arr[5])
-                    or not np.isnan(arr[3])
-                    or not np.isnan(arr[2])
-                    or not np.isnan(arr[1])
-                    or not np.isnan(arr[0])
-                ):
-                    return None, None, None
-                arr[4] = setup_indicator["value"]
-            elif setup_indicator["op"] == "!=":
-                if (
-                    not np.isnan(arr[4])
-                    or not np.isnan(arr[5])
-                    or not np.isnan(arr[3])
-                    or not np.isnan(arr[2])
-                    or not np.isnan(arr[1])
-                    or not np.isnan(arr[0])
-                ):
-                    return None, None, None
-                arr[5] = setup_indicator["value"]
-            elif setup_indicator["op"] == "crosses_above":
-                # print(setup_indicator)
-                arr[6] = setup_indicator["value"]
-                # print(arr)
-            elif setup_indicator["op"] == "crosses_below":
-                arr[7] = setup_indicator["value"]
-            elif setup_indicator["op"] == "between":
-                if (
-                    not np.isnan(arr[0])
-                    or not np.isnan(arr[1])
-                    or not np.isnan(arr[2])
-                    or not np.isnan(arr[3])
-                ):
-                    return None, None, None
-                arr[0] = max(
-                    float(setup_indicator["value2"]), float(setup_indicator["value"])
-                )  # upper
-                arr[2] = min(
-                    float(setup_indicator["value2"]), float(setup_indicator["value"])
-                )  # lower
-            elif setup_indicator["op"] == "within_ticks":
-                arr[10] = setup_indicator["value2"]  # tick amount
-                arr[8] = setup_indicator["value"]  # indicator/static
-            elif setup_indicator["op"] == "within_pct":
-                arr[10] = setup_indicator["value2"]  # % amount
-                arr[9] = setup_indicator["value"]  # indicator/static
-            condition_for_setup_indicators[indicator_string] = arr
+        else:
+            arr = condition_for_setup_indicators[indicator_string]
+        if setup_indicator["op"] == "<":
+            if not np.isnan(arr[0]) or not np.isnan(arr[1]):
+                return None, None, None
+            arr[0] = setup_indicator["value"]
+        elif setup_indicator["op"] == "<=":
+            if not np.isnan(arr[0]) or not np.isnan(arr[1]):
+                return None, None, None
+            arr[1] = setup_indicator["value"]
+        elif setup_indicator["op"] == ">":
+            if not np.isnan(arr[2]) or not np.isnan(arr[3]):
+                return None, None, None
+            arr[2] = setup_indicator["value"]
+        elif setup_indicator["op"] == ">=":
+            if not np.isnan(arr[2]) or not np.isnan(arr[3]):
+                return None, None, None
+            arr[3] = setup_indicator["value"]
+        elif setup_indicator["op"] == "==":
+            if (
+                not np.isnan(arr[4])
+                or not np.isnan(arr[5])
+                or not np.isnan(arr[3])
+                or not np.isnan(arr[2])
+                or not np.isnan(arr[1])
+                or not np.isnan(arr[0])
+            ):
+                return None, None, None
+            arr[4] = setup_indicator["value"]
+        elif setup_indicator["op"] == "!=":
+            if (
+                not np.isnan(arr[4])
+                or not np.isnan(arr[5])
+                or not np.isnan(arr[3])
+                or not np.isnan(arr[2])
+                or not np.isnan(arr[1])
+                or not np.isnan(arr[0])
+            ):
+                return None, None, None
+            arr[5] = setup_indicator["value"]
+        elif setup_indicator["op"] == "crosses_above":
+            # print(setup_indicator)
+            arr[6] = setup_indicator["value"]
+            # print(arr)
+        elif setup_indicator["op"] == "crosses_below":
+            arr[7] = setup_indicator["value"]
+        elif setup_indicator["op"] == "between":
+            if (
+                not np.isnan(arr[0])
+                or not np.isnan(arr[1])
+                or not np.isnan(arr[2])
+                or not np.isnan(arr[3])
+            ):
+                return None, None, None
+            arr[0] = max(
+                float(setup_indicator["value2"]), float(setup_indicator["value"])
+            )  # upper
+            arr[2] = min(
+                float(setup_indicator["value2"]), float(setup_indicator["value"])
+            )  # lower
+        elif setup_indicator["op"] == "within_ticks":
+            arr[10] = setup_indicator["value2"]  # tick amount
+            arr[8] = setup_indicator["value"]  # indicator/static
+        elif setup_indicator["op"] == "within_pct":
+            arr[10] = setup_indicator["value2"]  # % amount
+            arr[9] = setup_indicator["value"]  # indicator/static
+        condition_for_setup_indicators[indicator_string] = arr
     return setup_indicators, condition_for_setup_indicators, extra_indicators
 
 
