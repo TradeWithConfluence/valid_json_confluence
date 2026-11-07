@@ -132,8 +132,14 @@ def validate_json_file(json_data):
         or _negative(percent_trail)
         or _negative(bar_trail)
         # structure_trail is a lookback in bars, not a ratio: 1 and 2 are
-        # valid lookbacks.  Only reject non-positive values when supplied.
-        or (not np.isnan(structure_trail) and structure_trail < 1.0)
+        # valid lookbacks.  Reject non-positive and fractional values.
+        or (
+            not np.isnan(structure_trail)
+            and (
+                structure_trail < 1.0
+                or structure_trail != int(structure_trail)
+            )
+        )
     ):
         return 210  # Invalid trail value
     risk_params_4_3 = json_data.get("target", {})
