@@ -105,24 +105,35 @@ def validate_json_file(json_data):
     atr_multiple = atr_trail[1]
     sar_multiple = sar_trail[2]
     supertrend_multiple = supertrend_trail[2]
-    if (
-        ma_multiple < 0.0
-        or atr_multiple < 0.0
-        or sar_multiple < 0.0
-        or supertrend_multiple < 0.0
+
+    def _negative(value) -> bool:
+        # NaN means "control disabled"; it must not bypass validation.
+        return not np.isnan(value) and value < 0.0
+
+    if any(
+        _negative(value)
+        for value in (ma_multiple, atr_multiple, sar_multiple, supertrend_multiple)
     ):
         return 206  # Invalid multiple value
-    if rr_trigger_move_stop_breakeven < 0.0:
+    if _negative(rr_trigger_move_stop_breakeven):
         return 207  # Invalid rr_trigger_move_stop_breakeven value
-    if rr_stop_lock_profit_ratchet < 0.0 or rr_target_lock_profit_ratchet < 0.0:
+    if _negative(rr_stop_lock_profit_ratchet) or _negative(
+        rr_target_lock_profit_ratchet
+    ):
         return 208  # Invalid rr_lock_profit_ratchet value
-    if rr_stop_lock_profit_ratchet >= rr_target_lock_profit_ratchet:
+    if (
+        not np.isnan(rr_stop_lock_profit_ratchet)
+        and not np.isnan(rr_target_lock_profit_ratchet)
+        and rr_stop_lock_profit_ratchet >= rr_target_lock_profit_ratchet
+    ):
         return 209  # Invalid rr_lock_profit_ratchet value
     if (
-        dollar_trail < 0.0
-        or percent_trail < 0.0
-        or bar_trail < 0.0
-        or structure_trail < 2.0
+        _negative(dollar_trail)
+        or _negative(percent_trail)
+        or _negative(bar_trail)
+        # structure_trail is a lookback in bars, not a ratio: 1 and 2 are
+        # valid lookbacks.  Only reject non-positive values when supplied.
+        or (not np.isnan(structure_trail) and structure_trail < 1.0)
     ):
         return 210  # Invalid trail value
     risk_params_4_3 = json_data.get("target", {})
