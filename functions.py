@@ -473,7 +473,7 @@ def extract_risk_params(
     supertrend_params = supertrend_trail[0:2]
     if not np.isnan(supertrend_trail[0]):
         extra_indicators.append(
-            f"supertrendline_{int(supertrend_params[0])}_{int(supertrend_params[1])}"
+            f"supertrendline_{float(supertrend_params[0])}_{float(supertrend_params[1])}"
         )
     dollar_trail = risk_params_4_4.get("dollar_trail", np.nan)
     percent_trail = risk_params_4_4.get("percent_trail", np.nan)
