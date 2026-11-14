@@ -6,58 +6,8 @@ from .classes import CandleSize
 from .functions import get_indicator_conditions_from_jsons
 
 
-def validate_json_file(json_data):
-    # C10: validate the timeframe FIRST — the old code parsed it at :15
-    # (before this guard), so an invalid value crashed instead of returning 202.
-    try:
-        backtest_timeframe_cs = CandleSize(json_data["timeframe"])
-    except (ValueError, KeyError):
-        return 202
-    backtest_timeframe = backtest_timeframe_cs.value
-    # ensure if equity >= 15min  timeframe
-    if (
-        type(json_data["instrument"]) is str
-        and json_data["instrument"] == "equity"
-        and backtest_timeframe_cs < CandleSize.MINUTE_1
-    ):
-        return 201
-    if (
-        json_data.get("check_universe_frequency", None) is not None
-        and CandleSize(json_data.get("check_universe_frequency")) < CandleSize.WEEK_1
-    ):
-        return 211
-    try:
-        (
-            setup_indicators,
-            condition_for_setup_indicators,
-            entry_indicators,
-            condition_for_entry_indicators,
-            universe_indicators,
-            condition_for_universe_indicators,
-            extra_indicators,
-            _,
-            _,
-            _,
-            _,
-        ) = get_indicator_conditions_from_jsons(json_data, backtest_timeframe)
-    except ValueError as e:
-        # require_n_of with n greater than the number of conditions in its
-        # scope, and duplicate/conflicting conditions within a scope — reuse
-        # the per-scope "invalid indicators" codes
-        msg = str(e)
-        if "universe" in msg:
-            return 205  # Invalid universe indicators
-        if "entry" in msg:
-            return 204  # Invalid entry indicators
-        return 203  # Invalid setup indicators
-
-    if setup_indicators is None or condition_for_setup_indicators is None:
-        return 203  # Invalid setup indicators
-    if entry_indicators is None or condition_for_entry_indicators is None:
-        return 204  # Invalid entry indicators
-    if universe_indicators is None or condition_for_universe_indicators is None:
-        return 205  # Invalid universe indicators
-
+def _validate_risk_target(json_data):
+    extra_indicators = []
     risk_params_4_3 = json_data.get("target", {})
     risk_params_4_4 = risk_params_4_3.get("then", {})
     rr_trigger_move_stop_breakeven = risk_params_4_4.get(
@@ -174,6 +124,84 @@ def validate_json_file(json_data):
         time_based_takes.extend(
             [np.nan, np.nan] for _ in range(5 - len(time_based_takes))
         )
+
+    return 200
+
+
+def validate_json_file(json_data):
+    # C10: validate the timeframe FIRST — the old code parsed it at :15
+    # (before this guard), so an invalid value crashed instead of returning 202.
+    try:
+        backtest_timeframe_cs = CandleSize(json_data["timeframe"])
+    except (ValueError, KeyError):
+        return 202
+    backtest_timeframe = backtest_timeframe_cs.value
+    # ensure if equity >= 15min  timeframe
+    if (
+        type(json_data["instrument"]) is str
+        and json_data["instrument"] == "equity"
+        and backtest_timeframe_cs < CandleSize.MINUTE_1
+    ):
+        return 201
+    if (
+        json_data.get("check_universe_frequency", None) is not None
+        and CandleSize(json_data.get("check_universe_frequency")) < CandleSize.WEEK_1
+    ):
+        return 211
+    weekday_mask = json_data.get("session", {}).get("weekday_mask")
+    if weekday_mask is not None:
+        try:
+            valid_mask = len(weekday_mask) == 7 and all(
+                int(v) in (0, 1) for v in weekday_mask
+            )
+        except (TypeError, ValueError):
+            valid_mask = False
+        if not valid_mask:
+            return 212  # Invalid session.weekday_mask
+    try:
+        (
+            setup_indicators,
+            condition_for_setup_indicators,
+            entry_indicators,
+            condition_for_entry_indicators,
+            universe_indicators,
+            condition_for_universe_indicators,
+            _extra_indicators,
+            _,
+            _,
+            _,
+            _,
+        ) = get_indicator_conditions_from_jsons(json_data, backtest_timeframe)
+    except ValueError as e:
+        # require_n_of with n greater than the number of conditions in its
+        # scope, and duplicate/conflicting conditions within a scope — reuse
+        # the per-scope "invalid indicators" codes
+        msg = str(e)
+        if "universe" in msg:
+            return 205  # Invalid universe indicators
+        if "entry" in msg:
+            return 204  # Invalid entry indicators
+        return 203  # Invalid setup indicators
+
+    if setup_indicators is None or condition_for_setup_indicators is None:
+        return 203  # Invalid setup indicators
+    if entry_indicators is None or condition_for_entry_indicators is None:
+        return 204  # Invalid entry indicators
+    if universe_indicators is None or condition_for_universe_indicators is None:
+        return 205  # Invalid universe indicators
+
+    risk_code = _validate_risk_target(json_data)
+    if risk_code != 200:
+        return risk_code
+
+    sides = json_data.get("sides", {})
+    if isinstance(sides, dict):
+        for side_name in ("long", "short"):
+            side = sides.get(side_name)
+            if isinstance(side, dict):
+                side_code = _validate_risk_target(side)
+                if side_code != 200:
+                    return side_code
 
     return 200
 

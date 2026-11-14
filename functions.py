@@ -41,10 +41,14 @@ def obtain_conditions_for_setup_indicators(
             )
         if setup_indicator["stage"] != stage_name:
             continue
+        args = setup_indicator.get("args", {}) or {}
         if setup_indicator["stage"] != "universe":
             indicator_timeframe = setup_indicator.get("timeframe", "")
+            # Legacy configs put the timeframe inside args; honour it there
+            # instead of embedding it as a numeric parameter (which produced
+            # ids like adr_1d_20_1d and died in float("1d")).
             if indicator_timeframe == "":
-                indicator_timeframe = overall_backtest_timeframe
+                indicator_timeframe = args.get("timeframe") or overall_backtest_timeframe
         else:
             indicator_timeframe = "1d"
         if source == "formula":
@@ -58,7 +62,9 @@ def obtain_conditions_for_setup_indicators(
             extra_indicators.extend(leaf_ids)
         else:
             indicator_string = setup_indicator["fn"]
-            for period in setup_indicator["args"].values():
+            for key, period in args.items():
+                if key == "timeframe":
+                    continue
                 indicator_string += f"_{period}"
             indicator_string += f"_{indicator_timeframe}"
         setup_indicators.append(indicator_string)
@@ -69,7 +75,9 @@ def obtain_conditions_for_setup_indicators(
             and setup_indicator["dynamic_fn"]["source"] == "indicator"
         ):
             indicator_string_DYNAMIC: str = setup_indicator["dynamic_fn"]["fn"]
-            for period in setup_indicator["dynamic_fn"]["args"].values():
+            for key, period in setup_indicator["dynamic_fn"]["args"].items():
+                if key == "timeframe":
+                    continue
                 indicator_string_DYNAMIC += f"_{period}"
             indicator_string_DYNAMIC = indicator_string_DYNAMIC.lower()
             setup_indicator["value"] = indicator_string_DYNAMIC
@@ -545,6 +553,7 @@ def extract_risk_params(
             exit_before_earnings,
             close_before_weekend,
             exit_on_no_trade_days,
+            close_on_session_close,
         ]
     )
 
