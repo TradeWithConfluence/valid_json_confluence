@@ -48,7 +48,9 @@ def obtain_conditions_for_setup_indicators(
             # instead of embedding it as a numeric parameter (which produced
             # ids like adr_1d_20_1d and died in float("1d")).
             if indicator_timeframe == "":
-                indicator_timeframe = args.get("timeframe") or overall_backtest_timeframe
+                indicator_timeframe = (
+                    args.get("timeframe") or overall_backtest_timeframe
+                )
         else:
             indicator_timeframe = "1d"
         if source == "formula":

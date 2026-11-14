@@ -87,10 +87,7 @@ def _validate_risk_target(json_data):
         # valid lookbacks.  Reject non-positive and fractional values.
         or (
             not np.isnan(structure_trail)
-            and (
-                structure_trail < 1.0
-                or structure_trail != int(structure_trail)
-            )
+            and (structure_trail < 1.0 or structure_trail != int(structure_trail))
         )
     ):
         return 210  # Invalid trail value
